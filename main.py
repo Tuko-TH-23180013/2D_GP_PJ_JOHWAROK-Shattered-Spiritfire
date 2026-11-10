@@ -1,4 +1,4 @@
-"""조화록: 실행 루프와 2단계 이동·대시 연습장."""
+"""조화록: 실행 루프와 3단계 기본 전투 연습장."""
 
 import ctypes
 from dataclasses import dataclass, field
@@ -8,8 +8,10 @@ from pico2d import pico2d as p2d
 import sdl2
 from player import Player
 from world import World
+from combat_system import CombatSystem
+from training_dummy import TrainingDummy
 
-from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH
+from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH, PHYSICS_STEP
 
 
 @dataclass
@@ -55,14 +57,31 @@ class Game:
         self.elapsed = 0.0
         self.world = World()
         self.player = Player()
+        self.combat = CombatSystem()
+        self.dummy = TrainingDummy()
 
     def update(self, dt):
         self.elapsed += dt
         direction = (int(sdl2.SDLK_RIGHT in self.inputs.held)
                      - int(sdl2.SDLK_LEFT in self.inputs.held))
-        self.player.update(dt, direction, sdl2.SDLK_c in self.inputs.pressed,
-                           self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
-                           dash_pressed=sdl2.SDLK_z in self.inputs.pressed)
+        if sdl2.SDLK_r in self.inputs.pressed:
+            self.dummy = TrainingDummy()
+            self.player.attack = None
+            self.player.attack_queued = False
+        self.combat.begin_frame()
+        remaining = dt
+        first = True
+        while remaining > 1e-9:
+            step = min(remaining, PHYSICS_STEP)
+            remaining -= step
+            self.player.update(step, direction, first and sdl2.SDLK_c in self.inputs.pressed,
+                               self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
+                               dash_pressed=first and sdl2.SDLK_z in self.inputs.pressed,
+                               attack_pressed=first and sdl2.SDLK_x in self.inputs.pressed)
+            self.combat.update_target(self.dummy, step)
+            if self.player.attack is not None:
+                self.combat.resolve([self.player.attack], [self.dummy])
+            first = False
 
     def draw(self):
         # 내부 좌표는 왼쪽 아래 원점, 픽셀 단위. 이후 속도는 픽셀/초.
@@ -74,6 +93,24 @@ class Game:
             p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
                               *color, filled=True)
         player = self.player
+        dummy = self.dummy
+        if dummy.hp > 0:
+            color = ((255, 245, 220) if dummy.hit_flash > 0 else
+                     (180, 100, 220) if dummy.stagger_remaining > 0 else (170, 125, 75))
+            p2d.draw_rectangle(dummy.x, dummy.y, dummy.x + dummy.width,
+                              dummy.y + dummy.height, *color, filled=True)
+        p2d.draw_rectangle(dummy.x - 10, 205, dummy.x + 70, 213, 70, 40, 40, filled=True)
+        if dummy.hp > 0:
+            p2d.draw_rectangle(dummy.x - 10, 205,
+                              dummy.x - 10 + 80 * dummy.hp / dummy.max_hp,
+                              213, 220, 85, 85, filled=True)
+        if dummy.stagger > 0:
+            p2d.draw_rectangle(dummy.x - 10, 192,
+                              dummy.x - 10 + 80 * dummy.stagger / dummy.stagger_limit,
+                              198, 190, 110, 245, filled=True)
+        if player.attack is not None and player.attack.phase == "ACTIVE":
+            box = player.attack.bounds
+            p2d.draw_rectangle(box.left, box.bottom, box.right, box.top, 255, 130, 50)
         for hazard in self.world.hazards:
             p2d.draw_rectangle(hazard.left, hazard.bottom, hazard.right, hazard.top,
                               180, 55, 65, filled=True)
@@ -96,6 +133,12 @@ class Game:
         eye_x = player.x + (player.width - 7 if player.facing > 0 else 7)
         p2d.draw_rectangle(eye_x - 2, player.y + 48, eye_x + 2,
                           player.y + 53, 24, 28, 36, filled=True)
+        if player.attack is not None:
+            phase_color = {"STARTUP": (245, 220, 70), "ACTIVE": (255, 130, 50),
+                           "RECOVERY": (140, 130, 180)}[player.attack.phase]
+            p2d.draw_rectangle(player.x, player.y + player.height + 14,
+                              player.x + player.width, player.y + player.height + 20,
+                              *phase_color, filled=True)
         p2d.update_canvas()
 
 
@@ -133,10 +176,11 @@ def run(frame_hook=None):
             if fps_elapsed >= 0.25 or frames == 1:
                 fps = fps_frames / fps_elapsed if fps_elapsed else 0.0
                 title = (f"{WINDOW_TITLE} | {fps:.0f} FPS | Left/Right: move"
-                         " | C: jump | Down+C: drop | Z: dash | Esc: quit"
+                         " | C: jump | Down+C: drop | Z: dash | X: attack | R: dummy | Esc: quit"
                          f" | Charges: {game.player.dash_charges}/2"
                          f" | Recharge: {game.player.recharge_remaining:.1f}s"
-                         f" | Hazard hits: {game.player.hazard_hits}")
+                         f" | Dummy HP: {game.dummy.hp}"
+                         f" | Attack: {game.player.attack.data.name + ' ' + game.player.attack.phase if game.player.attack else 'Idle'}")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0

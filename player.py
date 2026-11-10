@@ -1,4 +1,6 @@
-"""이동·점프·대시 상태. 향후 공격도 독립 상태로 추가한다."""
+"""이동·점프·대시·공격을 독립 상태로 관리한다."""
+
+from attack import Attack, BASIC_COMBO, AIR_ATTACK
 
 from settings import (GRAVITY, JUMP_SPEED, MAX_FALL_SPEED, MOVE_SPEED,
                       PHYSICS_STEP, PLAYER_HEIGHT, PLAYER_WIDTH,
@@ -26,6 +28,36 @@ class Player:
         self.recharge_remaining = 0.0
         self.hazard_exposed = False
         self.hazard_hits = 0
+        self.attack = None
+        self.attack_queued = False
+
+    def start_attack(self, combo_index=0):
+        airborne = not self.grounded
+        data = AIR_ATTACK if airborne else BASIC_COMBO[combo_index]
+        self.attack = Attack(self, data, airborne, 0 if airborne else combo_index)
+        self.attack_queued = False
+        self.end_dash_invulnerability()
+
+    def request_attack(self):
+        if self.attack is None:
+            self.start_attack()
+        else:
+            # 현재 공격 중 추가 X 입력은 다음 공격 한 번만 예약한다.
+            self.attack_queued = False
+
+    def advance_attack(self, dt):
+        if self.attack is None:
+            return
+        self.attack.advance(dt)
+        if self.attack.phase == "DONE":
+            previous = self.attack
+            queued = self.attack_queued
+            self.attack = None
+            self.attack_queued = False
+            if queued:
+                index = ((previous.combo_index + 1) % len(BASIC_COMBO)
+                         if not previous.airborne and self.grounded else 0)
+                self.start_attack(index)
 
     @property
     def dash_invulnerable(self):
@@ -36,8 +68,12 @@ class Player:
         self.dash_invulnerability = 0.0
 
     def start_dash(self):
+        if self.attack is not None and self.attack.phase in ("STARTUP", "ACTIVE"):
+            return False
         if self.dash_charges == 0 or self.dash_lockout > 1e-9:
             return False
+        self.attack = None
+        self.attack_queued = False
         if self.dash_charges == DASH_MAX_CHARGES:
             self.recharge_remaining = DASH_RECHARGE
         self.dash_charges -= 1
@@ -59,7 +95,7 @@ class Player:
                     if self.dash_charges < DASH_MAX_CHARGES else 0.0)
 
     def update(self, dt, direction, jump_pressed, world, down_held=False,
-               dash_pressed=False):
+               dash_pressed=False, attack_pressed=False):
         if dt <= 0:
             return
         # 발판에서 걸어 나간 경우에도 공중 추가 점프는 한 번만 허용한다.
@@ -73,10 +109,12 @@ class Player:
             self.jumps_used = 0
         else:
             self.jumps_used = max(1, self.jumps_used)
-        if direction:
+        if direction and self.attack is None:
             self.facing = 1 if direction > 0 else -1
         if dash_pressed:
             self.start_dash()
+        elif attack_pressed:
+            self.request_attack()
         dropping = (jump_pressed and down_held and self.grounded
                     and all(s.one_way for s in supports))
         if dropping:
@@ -121,3 +159,4 @@ class Player:
                 self.hazard_hits += 1
             self.hazard_exposed = exposed
             self.advance_dash_timers(step)
+            self.advance_attack(step)
