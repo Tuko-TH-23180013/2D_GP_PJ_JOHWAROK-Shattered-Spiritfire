@@ -6,7 +6,8 @@ from weapon_data import WEAPONS
 from settings import (GRAVITY, JUMP_SPEED, MAX_FALL_SPEED, MOVE_SPEED,
                       PHYSICS_STEP, PLAYER_HEIGHT, PLAYER_WIDTH,
                       DASH_SPEED, DASH_DURATION, DASH_INVULNERABLE,
-                      DASH_GAP, DASH_RECHARGE, DASH_MAX_CHARGES, SWITCH_DURATION)
+                      DASH_GAP, DASH_RECHARGE, DASH_MAX_CHARGES, SWITCH_DURATION,
+                      SWITCH_INVULNERABLE)
 
 
 class Player:
@@ -36,6 +37,11 @@ class Player:
         self.attack_queued = False
         self.switch_queued = False
         self.switch_remaining = 0.0
+        self.switch_invulnerability = 0.0
+
+    @property
+    def invulnerable(self):
+        return self.dash_invulnerable or self.switch_invulnerability > 1e-9
 
     def request_switch(self):
         if self.switch_remaining > 1e-9:
@@ -52,6 +58,7 @@ class Player:
         self.attack_queued = False
         self.switch_queued = False
         self.switch_remaining = SWITCH_DURATION
+        self.switch_invulnerability = SWITCH_INVULNERABLE
         self.end_dash_invulnerability()
 
     def start_attack(self, combo_index=0):
@@ -165,7 +172,8 @@ class Player:
         while remaining > 1e-9:
             step = min(remaining, PHYSICS_STEP)
             # 구간 경계에서 나누어 FPS에 따른 이동 거리·무적 시간 차이를 막는다.
-            for timer in (self.dash_remaining, self.dash_invulnerability):
+            for timer in (self.dash_remaining, self.dash_invulnerability,
+                          self.switch_invulnerability):
                 if timer > 1e-9:
                     step = min(step, timer)
             remaining -= step
@@ -183,7 +191,7 @@ class Player:
                 self.jumps_used = 0
             else:
                 self.jumps_used = max(1, self.jumps_used)
-            exposed = not self.dash_invulnerable and any(
+            exposed = not self.invulnerable and any(
                 self.x < h.right and self.x + self.width > h.left
                 and self.y < h.top and self.y + self.height > h.bottom
                 for h in world.hazards)
@@ -192,4 +200,5 @@ class Player:
             self.hazard_exposed = exposed
             self.advance_dash_timers(step)
             self.switch_remaining = max(0.0, self.switch_remaining - step)
+            self.switch_invulnerability = max(0.0, self.switch_invulnerability - step)
             self.advance_attack(step)

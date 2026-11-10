@@ -1,4 +1,4 @@
-"""조화록: 실행 루프와 3단계 기본 전투 연습장."""
+"""조화록: 실행 루프와 4단계 무기 전환 전투 연습장."""
 
 import ctypes
 from dataclasses import dataclass, field
@@ -71,6 +71,7 @@ class Game:
             self.player.attack_queued = False
             self.player.switch_queued = False
             self.player.switch_remaining = 0.0
+            self.player.switch_invulnerability = 0.0
         self.combat.begin_frame()
         remaining = dt
         first = True
@@ -126,12 +127,23 @@ class Game:
             p2d.draw_rectangle(25 + index * 45, 675, 60 + index * 45, 695,
                               *color, filled=True)
         color = (90, 160, 240) if player.grounded else (100, 230, 160)
-        if player.dash_invulnerable:
+        if player.invulnerable:
             color = (245, 245, 255)
         elif player.hazard_exposed:
             color = (255, 80, 90)
         elif player.dash_remaining > 1e-9:
             color = (255, 180, 70)
+        if player.switch_remaining > 0:
+            # 에셋 도입 전 사각형 불꽃으로 표시하는 임시 도깨비불 연출.
+            for index in range(5):
+                flame_x = player.x - 12 + index * 15
+                rise = ((self.elapsed * 120 + index * 11) % 30)
+                p2d.draw_rectangle(flame_x, player.y - 4 + rise,
+                                  flame_x + 8, player.y + 30 + rise,
+                                  50, 170, 250, filled=True)
+                p2d.draw_rectangle(flame_x + 2, player.y + rise,
+                                  flame_x + 6, player.y + 18 + rise,
+                                  170, 250, 250, filled=True)
         # 외형은 충돌 상자보다 좌우 6px, 위쪽 8px 크다.
         p2d.draw_rectangle(player.x - 6, player.y, player.x + player.width + 6,
                           player.y + player.height + 8, *color, filled=True)
@@ -189,6 +201,7 @@ def run(frame_hook=None):
                          f" | Charges: {game.player.dash_charges}/2"
                          f" | Recharge: {game.player.recharge_remaining:.1f}s"
                          f" | Dummy HP: {game.dummy.hp}"
+                         f" | Hazard hits: {game.player.hazard_hits}"
                          f" | Attack: {game.player.attack.data.name + ' ' + game.player.attack.phase if game.player.attack else 'Idle'}")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0

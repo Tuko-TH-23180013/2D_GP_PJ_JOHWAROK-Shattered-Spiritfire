@@ -1,4 +1,4 @@
-"""실제 창을 잠깐 열고 Esc/종료 이벤트 두 경로를 검사한다."""
+"""실제 창에서 전환·공격을 주입하고 Esc/종료 두 경로를 검사한다."""
 
 import ctypes
 from pathlib import Path
@@ -14,10 +14,10 @@ from settings import WINDOW_WIDTH, WINDOW_HEIGHT
 
 def check(exit_type):
     def inject(frame):
-        if frame in (12, 13):
+        if frame in (2, 3, 22, 23):
             event = sdl2.SDL_Event()
-            event.type = sdl2.SDL_KEYDOWN if frame == 12 else sdl2.SDL_KEYUP
-            event.key.keysym.sym = sdl2.SDLK_x
+            event.type = sdl2.SDL_KEYDOWN if frame in (2, 22) else sdl2.SDL_KEYUP
+            event.key.keysym.sym = sdl2.SDLK_SPACE if frame in (2, 3) else sdl2.SDLK_x
             if sdl2.SDL_PushEvent(ctypes.byref(event)) != 1:
                 raise RuntimeError("공격 입력 주입 실패")
         if frame == 10:
@@ -29,7 +29,7 @@ def check(exit_type):
             assert (width.value, height.value) == (WINDOW_WIDTH, WINDOW_HEIGHT)
         if frame > 120:
             raise AssertionError("종료 이벤트 처리 실패")
-        if frame == 30:
+        if frame == 60:
             event = sdl2.SDL_Event()
             event.type = exit_type
             if exit_type == sdl2.SDL_KEYDOWN:
@@ -38,7 +38,7 @@ def check(exit_type):
                 raise RuntimeError("SDL 이벤트 주입 실패")
 
     frames = run(frame_hook=inject)
-    assert frames == 30, f"예상하지 못한 종료 시점: {frames}"
+    assert frames == 60, f"예상하지 못한 종료 시점: {frames}"
     print(f"PASS: {exit_type=}, {frames=}")
 
 
