@@ -61,7 +61,7 @@ class Game:
         direction = (int(sdl2.SDLK_RIGHT in self.inputs.held)
                      - int(sdl2.SDLK_LEFT in self.inputs.held))
         self.player.update(dt, direction, sdl2.SDLK_c in self.inputs.pressed,
-                           self.world)
+                           self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held)
 
     def draw(self):
         # 내부 좌표는 왼쪽 아래 원점, 픽셀 단위. 이후 속도는 픽셀/초.
@@ -69,8 +69,9 @@ class Game:
         p2d.draw_rectangle(0, 0, WINDOW_WIDTH - 1, WINDOW_HEIGHT - 1,
                           24, 28, 36, filled=True)
         for solid in self.world.solids:
+            color = (110, 170, 140) if solid.one_way else (95, 110, 125)
             p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
-                              95, 110, 125, filled=True)
+                              *color, filled=True)
         player = self.player
         color = (90, 160, 240) if player.grounded else (100, 230, 160)
         # 외형은 충돌 상자보다 좌우 6px, 위쪽 8px 크다.
@@ -118,7 +119,7 @@ def run(frame_hook=None):
             if fps_elapsed >= 0.25 or frames == 1:
                 fps = fps_frames / fps_elapsed if fps_elapsed else 0.0
                 title = (f"{WINDOW_TITLE} | {fps:.0f} FPS | Left/Right: move"
-                         " | C: double jump | Esc: quit")
+                         " | C: double jump | Down+C: drop | Esc: quit")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0

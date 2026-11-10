@@ -80,6 +80,46 @@ class MovementTests(unittest.TestCase):
         p.update(0.05, 0, False, World([]))
         self.assertEqual(p.facing, -1)
 
+    def test_drop_lands_on_next_platform(self):
+        upper = Rect(100, 300, 300, 320, one_way=True)
+        lower = Rect(100, 200, 300, 220, one_way=True)
+        world = World([upper, lower, Rect(0, 0, 500, 100)])
+        p = Player(150, 320)
+        p.update(0.05, 0, True, world, down_held=True)
+        self.assertLess(p.y, 320)
+        self.assertLess(p.vy, 0)
+        for _ in range(20):
+            p.update(0.05, 0, False, world, down_held=True)
+        self.assertEqual(p.y, 220)
+        self.assertTrue(p.grounded)
+        self.assertEqual(p.jumps_used, 0)
+
+    def test_down_jump_on_floor_does_not_drop(self):
+        p = self.player
+        p.update(0.05, 0, True, self.world, down_held=True)
+        self.assertGreater(p.y, 100)
+        self.assertFalse(p.drop_platforms)
+
+    def test_one_way_passes_up_then_lands(self):
+        platform = Rect(100, 210, 300, 235, one_way=True)
+        world = World([*self.world.solids, platform])
+        p = Player(150, 100)
+        peak = p.y
+        for frame in range(60):
+            p.update(1 / 60, 0, frame == 0 or frame == 10, world)
+            peak = max(peak, p.y)
+        self.assertGreater(peak, platform.top)
+        self.assertEqual(p.y, platform.top)
+
+    def test_drop_at_different_frame_rates(self):
+        for fps in (20, 60, 144):
+            world = World([Rect(0, 0, 500, 100),
+                           Rect(100, 200, 300, 220, one_way=True)])
+            p = Player(150, 220)
+            for frame in range(fps):
+                p.update(1 / fps, 0, frame == 0, world, down_held=True)
+            self.assertEqual(p.y, 100)
+
 
 if __name__ == '__main__':
     unittest.main()

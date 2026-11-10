@@ -8,10 +8,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import sdl2
 from main import run
+from pico2d import pico2d as p2d
+from settings import WINDOW_WIDTH, WINDOW_HEIGHT
 
 
 def check(exit_type):
     def inject(frame):
+        if frame == 10:
+            width, height = ctypes.c_int(), ctypes.c_int()
+            sdl2.SDL_GetWindowSize(p2d.window, ctypes.byref(width), ctypes.byref(height))
+            assert sdl2.SDL_GetWindowFlags(p2d.window) & sdl2.SDL_WINDOW_MAXIMIZED
+            print(f"Maximized window: {width.value}x{height.value}")
+            sdl2.SDL_RenderGetLogicalSize(p2d.renderer, ctypes.byref(width), ctypes.byref(height))
+            assert (width.value, height.value) == (WINDOW_WIDTH, WINDOW_HEIGHT)
         if frame > 120:
             raise AssertionError("종료 이벤트 처리 실패")
         if frame == 30:
