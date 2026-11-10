@@ -1,6 +1,7 @@
 """이동·점프·대시·공격을 독립 상태로 관리한다."""
 
-from attack import Attack, BASIC_COMBO, AIR_ATTACK
+from attack import Attack
+from weapon_data import WEAPONS
 
 from settings import (GRAVITY, JUMP_SPEED, MAX_FALL_SPEED, MOVE_SPEED,
                       PHYSICS_STEP, PLAYER_HEIGHT, PLAYER_WIDTH,
@@ -12,7 +13,10 @@ class Player:
     width = PLAYER_WIDTH
     height = PLAYER_HEIGHT
 
-    def __init__(self, x=120.0, y=100.0):
+    def __init__(self, x=120.0, y=100.0, weapon="basic"):
+        if weapon not in WEAPONS:
+            raise ValueError(f"알 수 없는 무기: {weapon}")
+        self.weapon = weapon
         self.x = x
         self.y = y
         self.vy = 0.0
@@ -33,7 +37,8 @@ class Player:
 
     def start_attack(self, combo_index=0):
         airborne = not self.grounded
-        data = AIR_ATTACK if airborne else BASIC_COMBO[combo_index]
+        weapon = WEAPONS[self.weapon]
+        data = weapon.air if airborne else weapon.combo[combo_index]
         self.attack = Attack(self, data, airborne, 0 if airborne else combo_index)
         self.attack_queued = False
         self.end_dash_invulnerability()
@@ -55,7 +60,7 @@ class Player:
             self.attack = None
             self.attack_queued = False
             if queued:
-                index = ((previous.combo_index + 1) % len(BASIC_COMBO)
+                index = ((previous.combo_index + 1) % len(WEAPONS[self.weapon].combo)
                          if not previous.airborne and self.grounded else 0)
                 self.start_attack(index)
 
