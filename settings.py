@@ -1,7 +1,16 @@
-"""0단계 임시 화면·시간 설정. 전투 확정 수치가 아니다."""
+"""화면·시간·1단계 이동의 임시 설정. 전투 확정 수치가 아니다."""
 
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
-WINDOW_TITLE = "JOHWAROK - Bootstrap"
+WINDOW_TITLE = "JOHWAROK - Movement"
 TARGET_FPS = 60
 MAX_DT = 0.05
+
+# 1단계 조작감 확인용 임시값. 단위: 픽셀, 초.
+MOVE_SPEED = 300.0
+JUMP_SPEED = 620.0
+GRAVITY = 1800.0
+MAX_FALL_SPEED = 900.0
+PHYSICS_STEP = 1.0 / 240.0
+PLAYER_WIDTH = 36.0
+PLAYER_HEIGHT = 64.0

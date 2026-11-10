@@ -1,4 +1,4 @@
-"""조화록 0단계: 창, 입력, dt, 테스트 사각형, 정상 종료."""
+"""조화록: 실행 루프와 1단계 이동 연습장."""
 
 import ctypes
 from dataclasses import dataclass, field
@@ -6,6 +6,8 @@ from time import perf_counter
 
 from pico2d import pico2d as p2d
 import sdl2
+from player import Player
+from world import World
 
 from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH
 
@@ -51,18 +53,34 @@ class Game:
     def __init__(self):
         self.inputs = InputState()
         self.elapsed = 0.0
+        self.world = World()
+        self.player = Player()
 
     def update(self, dt):
         self.elapsed += dt
+        direction = (int(sdl2.SDLK_RIGHT in self.inputs.held)
+                     - int(sdl2.SDLK_LEFT in self.inputs.held))
+        self.player.update(dt, direction, sdl2.SDLK_c in self.inputs.pressed,
+                           self.world)
 
     def draw(self):
         # 내부 좌표는 왼쪽 아래 원점, 픽셀 단위. 이후 속도는 픽셀/초.
         p2d.clear_canvas()
         p2d.draw_rectangle(0, 0, WINDOW_WIDTH - 1, WINDOW_HEIGHT - 1,
                           24, 28, 36, filled=True)
-        p2d.draw_rectangle(0, 99, WINDOW_WIDTH - 1, 100, 120, 130, 140)
-        color = (100, 230, 160) if self.inputs.held else (90, 160, 240)
-        p2d.draw_rectangle(610, 100, 670, 180, *color, filled=True)
+        for solid in self.world.solids:
+            p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
+                              95, 110, 125, filled=True)
+        player = self.player
+        color = (90, 160, 240) if player.grounded else (100, 230, 160)
+        # 외형은 충돌 상자보다 좌우 6px, 위쪽 8px 크다.
+        p2d.draw_rectangle(player.x - 6, player.y, player.x + player.width + 6,
+                          player.y + player.height + 8, *color, filled=True)
+        p2d.draw_rectangle(player.x, player.y, player.x + player.width,
+                          player.y + player.height, 255, 215, 90)
+        eye_x = player.x + (player.width - 7 if player.facing > 0 else 7)
+        p2d.draw_rectangle(eye_x - 2, player.y + 48, eye_x + 2,
+                          player.y + 53, 24, 28, 36, filled=True)
         p2d.update_canvas()
 
 
@@ -94,7 +112,8 @@ def run(frame_hook=None):
             fps_elapsed += raw_dt
             if fps_elapsed >= 0.25 or frames == 1:
                 fps = fps_frames / fps_elapsed if fps_elapsed else 0.0
-                title = f"{WINDOW_TITLE} | {fps:.0f} FPS | Hold key: color | Esc: quit"
+                title = (f"{WINDOW_TITLE} | {fps:.0f} FPS | Left/Right: move"
+                         " | C: double jump | Esc: quit")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0
