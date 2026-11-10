@@ -6,7 +6,7 @@ from weapon_data import WEAPONS
 from settings import (GRAVITY, JUMP_SPEED, MAX_FALL_SPEED, MOVE_SPEED,
                       PHYSICS_STEP, PLAYER_HEIGHT, PLAYER_WIDTH,
                       DASH_SPEED, DASH_DURATION, DASH_INVULNERABLE,
-                      DASH_GAP, DASH_RECHARGE, DASH_MAX_CHARGES)
+                      DASH_GAP, DASH_RECHARGE, DASH_MAX_CHARGES, SWITCH_DURATION)
 
 
 class Player:
@@ -34,6 +34,25 @@ class Player:
         self.hazard_hits = 0
         self.attack = None
         self.attack_queued = False
+        self.switch_queued = False
+        self.switch_remaining = 0.0
+
+    def request_switch(self):
+        if self.switch_remaining > 1e-9:
+            return False
+        if self.attack is not None:
+            self.switch_queued = True
+            return False
+        self.perform_switch()
+        return True
+
+    def perform_switch(self):
+        self.weapon = "giant" if self.weapon == "basic" else "basic"
+        self.attack = None
+        self.attack_queued = False
+        self.switch_queued = False
+        self.switch_remaining = SWITCH_DURATION
+        self.end_dash_invulnerability()
 
     def start_attack(self, combo_index=0):
         airborne = not self.grounded
@@ -44,6 +63,8 @@ class Player:
         self.end_dash_invulnerability()
 
     def request_attack(self):
+        if self.switch_remaining > 1e-9:
+            return
         if self.attack is None:
             self.start_attack()
         else:
@@ -59,7 +80,9 @@ class Player:
             queued = self.attack_queued
             self.attack = None
             self.attack_queued = False
-            if queued:
+            if self.switch_queued:
+                self.perform_switch()
+            elif queued:
                 index = ((previous.combo_index + 1) % len(WEAPONS[self.weapon].combo)
                          if not previous.airborne and self.grounded else 0)
                 self.start_attack(index)
@@ -86,6 +109,8 @@ class Player:
         self.dash_remaining = DASH_DURATION
         self.dash_invulnerability = DASH_INVULNERABLE
         self.dash_lockout = DASH_DURATION + DASH_GAP
+        if self.switch_queued:
+            self.perform_switch()
         return True
 
     def advance_dash_timers(self, step):
@@ -100,7 +125,7 @@ class Player:
                     if self.dash_charges < DASH_MAX_CHARGES else 0.0)
 
     def update(self, dt, direction, jump_pressed, world, down_held=False,
-               dash_pressed=False, attack_pressed=False):
+               dash_pressed=False, attack_pressed=False, switch_pressed=False):
         if dt <= 0:
             return
         # 발판에서 걸어 나간 경우에도 공중 추가 점프는 한 번만 허용한다.
@@ -118,7 +143,9 @@ class Player:
             self.facing = 1 if direction > 0 else -1
         if dash_pressed:
             self.start_dash()
-        elif attack_pressed:
+        if switch_pressed:
+            self.request_switch()
+        elif attack_pressed and not dash_pressed:
             self.request_attack()
         dropping = (jump_pressed and down_held and self.grounded
                     and all(s.one_way for s in supports))
@@ -164,4 +191,5 @@ class Player:
                 self.hazard_hits += 1
             self.hazard_exposed = exposed
             self.advance_dash_timers(step)
+            self.switch_remaining = max(0.0, self.switch_remaining - step)
             self.advance_attack(step)

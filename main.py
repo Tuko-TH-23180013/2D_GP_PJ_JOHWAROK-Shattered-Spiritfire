@@ -10,6 +10,7 @@ from player import Player
 from world import World
 from combat_system import CombatSystem
 from training_dummy import TrainingDummy
+from weapon_data import WEAPONS
 
 from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH, PHYSICS_STEP
 
@@ -68,6 +69,8 @@ class Game:
             self.dummy = TrainingDummy()
             self.player.attack = None
             self.player.attack_queued = False
+            self.player.switch_queued = False
+            self.player.switch_remaining = 0.0
         self.combat.begin_frame()
         remaining = dt
         first = True
@@ -77,7 +80,8 @@ class Game:
             self.player.update(step, direction, first and sdl2.SDLK_c in self.inputs.pressed,
                                self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
                                dash_pressed=first and sdl2.SDLK_z in self.inputs.pressed,
-                               attack_pressed=first and sdl2.SDLK_x in self.inputs.pressed)
+                               attack_pressed=first and sdl2.SDLK_x in self.inputs.pressed,
+                               switch_pressed=first and sdl2.SDLK_SPACE in self.inputs.pressed)
             self.combat.update_target(self.dummy, step)
             if self.player.attack is not None:
                 self.combat.resolve([self.player.attack], [self.dummy])
@@ -93,6 +97,9 @@ class Game:
             p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
                               *color, filled=True)
         player = self.player
+        weapon_color = (110, 190, 250) if player.weapon == "basic" else (215, 145, 65)
+        p2d.draw_rectangle(130, 675, 155 if player.weapon == "basic" else 180,
+                          695, *weapon_color, filled=True)
         dummy = self.dummy
         if dummy.hp > 0:
             color = ((255, 245, 220) if dummy.hit_flash > 0 else
@@ -176,7 +183,9 @@ def run(frame_hook=None):
             if fps_elapsed >= 0.25 or frames == 1:
                 fps = fps_frames / fps_elapsed if fps_elapsed else 0.0
                 title = (f"{WINDOW_TITLE} | {fps:.0f} FPS | Left/Right: move"
-                         " | C: jump | Down+C: drop | Z: dash | X: attack | R: dummy | Esc: quit"
+                         " | C: jump | Down+C: drop | Z: dash | X: attack | Space: switch | R: dummy | Esc: quit"
+                         f" | Weapon: {WEAPONS[game.player.weapon].name}"
+                         f"{' (queued)' if game.player.switch_queued else ''}"
                          f" | Charges: {game.player.dash_charges}/2"
                          f" | Recharge: {game.player.recharge_remaining:.1f}s"
                          f" | Dummy HP: {game.dummy.hp}"

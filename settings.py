@@ -22,3 +22,6 @@ DASH_INVULNERABLE = 0.08
 DASH_GAP = 0.08
 DASH_RECHARGE = 1.0
 DASH_MAX_CHARGES = 2
+
+# 무기 전환 연출 동안 새 공격/재전환을 막는 임시 시간.
+SWITCH_DURATION = 0.18
