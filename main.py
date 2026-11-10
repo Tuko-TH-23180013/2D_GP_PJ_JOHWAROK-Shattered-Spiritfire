@@ -90,6 +90,11 @@ def run(frame_hook=None):
     try:
         if not p2d.window or not p2d.renderer:
             raise RuntimeError("SDL 창 또는 렌더러를 생성하지 못했습니다.")
+        # 월드 좌표는 유지하고, 모니터 작업 영역에 맞춰 출력만 확대한다.
+        if sdl2.SDL_RenderSetLogicalSize(p2d.renderer, WINDOW_WIDTH, WINDOW_HEIGHT) != 0:
+            raise RuntimeError("논리 화면 크기를 설정하지 못했습니다.")
+        sdl2.SDL_SetWindowResizable(p2d.window, sdl2.SDL_TRUE)
+        sdl2.SDL_MaximizeWindow(p2d.window)
         game = Game()
         previous = perf_counter()
         fps_elapsed = 0.0
