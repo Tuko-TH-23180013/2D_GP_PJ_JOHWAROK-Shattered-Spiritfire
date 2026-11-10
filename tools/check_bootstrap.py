@@ -14,6 +14,12 @@ from settings import WINDOW_WIDTH, WINDOW_HEIGHT
 
 def check(exit_type):
     def inject(frame):
+        if frame in (12, 13):
+            event = sdl2.SDL_Event()
+            event.type = sdl2.SDL_KEYDOWN if frame == 12 else sdl2.SDL_KEYUP
+            event.key.keysym.sym = sdl2.SDLK_x
+            if sdl2.SDL_PushEvent(ctypes.byref(event)) != 1:
+                raise RuntimeError("공격 입력 주입 실패")
         if frame == 10:
             width, height = ctypes.c_int(), ctypes.c_int()
             sdl2.SDL_GetWindowSize(p2d.window, ctypes.byref(width), ctypes.byref(height))

@@ -43,7 +43,7 @@ class Player:
             self.start_attack()
         else:
             # 현재 공격 중 추가 X 입력은 다음 공격 한 번만 예약한다.
-            self.attack_queued = False
+            self.attack_queued = True
 
     def advance_attack(self, dt):
         if self.attack is None:
