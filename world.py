@@ -14,6 +14,8 @@ class Rect:
 
 class World:
     def __init__(self, solids=None):
+        # 피해 시스템 도입 전 무적 여부를 확인하는 임시 위험 구역.
+        self.hazards = []
         self.solids = list(solids) if solids is not None else [
             Rect(0, 0, 1280, 100),
             Rect(-40, 0, 0, 720),

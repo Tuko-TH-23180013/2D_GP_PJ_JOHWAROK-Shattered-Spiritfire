@@ -1,4 +1,4 @@
-"""조화록: 실행 루프와 1단계 이동 연습장."""
+"""조화록: 실행 루프와 2단계 이동·대시 연습장."""
 
 import ctypes
 from dataclasses import dataclass, field
@@ -61,7 +61,8 @@ class Game:
         direction = (int(sdl2.SDLK_RIGHT in self.inputs.held)
                      - int(sdl2.SDLK_LEFT in self.inputs.held))
         self.player.update(dt, direction, sdl2.SDLK_c in self.inputs.pressed,
-                           self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held)
+                           self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
+                           dash_pressed=sdl2.SDLK_z in self.inputs.pressed)
 
     def draw(self):
         # 내부 좌표는 왼쪽 아래 원점, 픽셀 단위. 이후 속도는 픽셀/초.
@@ -73,7 +74,20 @@ class Game:
             p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
                               *color, filled=True)
         player = self.player
+        for hazard in self.world.hazards:
+            p2d.draw_rectangle(hazard.left, hazard.bottom, hazard.right, hazard.top,
+                              180, 55, 65, filled=True)
+        for index in range(2):
+            color = (80, 220, 240) if index < player.dash_charges else (65, 70, 80)
+            p2d.draw_rectangle(25 + index * 45, 675, 60 + index * 45, 695,
+                              *color, filled=True)
         color = (90, 160, 240) if player.grounded else (100, 230, 160)
+        if player.dash_invulnerable:
+            color = (245, 245, 255)
+        elif player.hazard_exposed:
+            color = (255, 80, 90)
+        elif player.dash_remaining > 1e-9:
+            color = (255, 180, 70)
         # 외형은 충돌 상자보다 좌우 6px, 위쪽 8px 크다.
         p2d.draw_rectangle(player.x - 6, player.y, player.x + player.width + 6,
                           player.y + player.height + 8, *color, filled=True)
@@ -119,7 +133,10 @@ def run(frame_hook=None):
             if fps_elapsed >= 0.25 or frames == 1:
                 fps = fps_frames / fps_elapsed if fps_elapsed else 0.0
                 title = (f"{WINDOW_TITLE} | {fps:.0f} FPS | Left/Right: move"
-                         " | C: double jump | Down+C: drop | Esc: quit")
+                         " | C: jump | Down+C: drop | Z: dash | Esc: quit"
+                         f" | Charges: {game.player.dash_charges}/2"
+                         f" | Recharge: {game.player.recharge_remaining:.1f}s"
+                         f" | Hazard hits: {game.player.hazard_hits}")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0
