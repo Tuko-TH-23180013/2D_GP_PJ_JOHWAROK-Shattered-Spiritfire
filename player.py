@@ -43,7 +43,7 @@ class Player:
         self.dash_charges -= 1
         self.dash_direction = self.facing
         self.dash_remaining = DASH_DURATION
-        self.dash_invulnerability = 0.0
+        self.dash_invulnerability = DASH_INVULNERABLE
         self.dash_lockout = DASH_DURATION + DASH_GAP
         return True
 
