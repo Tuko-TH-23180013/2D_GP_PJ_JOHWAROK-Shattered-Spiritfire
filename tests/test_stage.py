@@ -5,6 +5,73 @@ from camera import Camera
 
 
 class StageTests(unittest.TestCase):
+    def test_checkpoint_requires_nearby_grounded_living_player(self):
+        from checkpoint import Checkpoint
+        cp = Checkpoint((2500, 100))
+        p = Player()
+        p.grounded = True
+        self.assertFalse(cp.activate(p))
+        p.x = 2500
+        p.grounded = False
+        self.assertFalse(cp.activate(p))
+        p.grounded = True
+        p.hp = 0
+        self.assertFalse(cp.activate(p))
+        p.hp = 100
+        self.assertTrue(cp.activate(p))
+
+    def test_checkpoint_restart_resets_combat_but_keeps_checkpoint(self):
+        from main import Game
+        import sdl2
+        game = Game()
+        game.player.x = 2500
+        game.inputs.pressed = {sdl2.SDLK_UP}
+        game.update(0.02)
+        self.assertTrue(game.checkpoint.active)
+        for _ in range(3):
+            game.player.request_attack()
+            game.player.request_switch()
+            game.player.hp = 0
+            game.enemies.clear()
+            game.inputs.held = {sdl2.SDLK_RIGHT}
+            game.inputs.pressed = {sdl2.SDLK_r, sdl2.SDLK_x}
+            game.update(0.02)
+            self.assertEqual((game.player.x, game.player.y, game.player.hp), (2500, 100, 100))
+            self.assertTrue(game.checkpoint.active)
+            self.assertEqual(game.player.dash_charges, 2)
+            self.assertIsNone(game.player.attack)
+            self.assertFalse(game.player.switch_queued)
+            self.assertFalse(game.inputs.held or game.inputs.pressed)
+            self.assertEqual(len(game.enemies), 1)
+            self.assertGreater(game.camera.x, 0)
+
+    def test_playable_route_checkpoint_and_gate(self):
+        from main import Game
+        import sdl2
+        game = Game()
+        game.inputs.held = {sdl2.SDLK_RIGHT}
+        jumped = False
+        air_frames = 0
+        for frame in range(1800):
+            keys = set()
+            if frame % 12 == 0:
+                keys.add(sdl2.SDLK_x)
+            if not jumped and game.player.x >= 970:
+                jumped = True
+                keys.add(sdl2.SDLK_c)
+            if jumped:
+                air_frames += 1
+                if air_frames == 18:
+                    keys.add(sdl2.SDLK_c)
+            if 2460 < game.player.x < 2520:
+                keys.add(sdl2.SDLK_UP)
+            game.inputs.pressed = keys
+            game.update(1 / 60)
+            if game.at_boss_gate:
+                break
+        self.assertGreater(game.player.hp, 0)
+        self.assertTrue(game.checkpoint.active)
+        self.assertTrue(game.at_boss_gate)
     def test_camera_clamp_and_world_coordinates(self):
         p = Player()
         camera = Camera(3200)

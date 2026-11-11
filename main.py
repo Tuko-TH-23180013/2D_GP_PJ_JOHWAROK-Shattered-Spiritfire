@@ -1,4 +1,4 @@
-"""조화록: 실행 루프와 5단계 생존 전투 연습장."""
+"""조화록: 장승마을 진행·전투·체크포인트 실행 루프."""
 
 import ctypes
 from dataclasses import dataclass, field
@@ -7,12 +7,11 @@ from time import perf_counter
 from pico2d import pico2d as p2d
 import sdl2
 from player import Player
-from world import World
 from combat_system import CombatSystem
 from training_dummy import TrainingDummy
-from enemy import Enemy
 from stage import VillageStage
 from camera import Camera
+from checkpoint import Checkpoint
 from weapon_data import WEAPONS
 
 from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH, PHYSICS_STEP
@@ -62,14 +61,20 @@ class Game:
         self.stage = VillageStage()
         self.world = self.stage.create_world()
         self.camera = Camera(self.stage.width)
+        self.checkpoint = Checkpoint(self.stage.checkpoint_spawn)
+        self.at_boss_gate = False
         self.player = Player()
         self.combat = CombatSystem()
         self.dummy = TrainingDummy()
         self.enemies = self.stage.create_enemies()
 
     def restart(self):
-        # 임시 시작점으로 전부 재생성하여 오래된 공격·예약·입력을 남기지 않는다.
+        active = self.checkpoint.active
         self.__init__()
+        if active:
+            self.checkpoint.active = True
+            self.player.x, self.player.y = self.checkpoint.spawn
+        self.camera.follow(self.player)
 
     def update(self, dt):
         if sdl2.SDLK_r in self.inputs.pressed:
@@ -110,6 +115,11 @@ class Game:
                 break
             first = False
         self.camera.follow(self.player)
+        if sdl2.SDLK_UP in self.inputs.pressed:
+            self.checkpoint.activate(self.player)
+        self.at_boss_gate = (self.player.hp > 0
+                            and self.player.x + self.player.width >= self.stage.boss_entrance.left
+                            and self.player.y < self.stage.boss_entrance.top)
 
     def draw(self):
         def draw_world(left, bottom, right, top, *color, **kwargs):
@@ -131,6 +141,13 @@ class Game:
             draw_world(start - 12, 165, start + 32, 175, 160, 130, 70, filled=True)
         gate = self.stage.boss_entrance
         draw_world(gate.left, gate.bottom, gate.right, gate.top, 170, 95, 180)
+        cx, cy = self.checkpoint.spawn
+        cp_color = (90, 245, 190) if self.checkpoint.active else (80, 130, 190)
+        draw_world(cx - 16, cy, cx + 16, cy + 110, *cp_color, filled=True)
+        draw_world(cx - 32, cy + 75, cx + 32, cy + 90, *cp_color, filled=True)
+        if self.checkpoint.can_activate(player) and not self.checkpoint.active:
+            draw_world(cx - 4, cy + 125, cx + 4, cy + 150, 240, 240, 170, filled=True)
+            draw_world(cx - 12, cy + 138, cx + 12, cy + 145, 240, 240, 170, filled=True)
         p2d.draw_rectangle(25, 635, 225, 653, 70, 40, 45, filled=True)
         if player.hp > 0:
             p2d.draw_rectangle(25, 635, 25 + 200 * player.hp / player.max_hp,
@@ -269,6 +286,11 @@ def run(frame_hook=None):
                          f" | Attack: {game.player.attack.data.name + ' ' + game.player.attack.phase if game.player.attack else 'Idle'}")
                 if game.player.hp <= 0:
                     title = "JOHWAROK - YOU DIED | Press R to restart | Esc: quit"
+                elif game.checkpoint.can_activate(game.player):
+                    title = ("JOHWAROK - Checkpoint ACTIVE | R: respawn here" if game.checkpoint.active
+                             else "JOHWAROK - Press UP to activate checkpoint | R: restart")
+                elif game.at_boss_gate:
+                    title = "JOHWAROK - Boss gate reached | Boss battle: next development stage | R: restart"
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0
