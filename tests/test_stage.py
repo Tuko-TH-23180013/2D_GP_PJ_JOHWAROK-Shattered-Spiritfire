@@ -1,9 +1,41 @@
 import unittest
 from stage import VillageStage
 from player import Player
+from camera import Camera
 
 
 class StageTests(unittest.TestCase):
+    def test_camera_clamp_and_world_coordinates(self):
+        p = Player()
+        camera = Camera(3200)
+        camera.follow(p)
+        self.assertEqual(camera.x, 0)
+        p.x = 1600
+        camera.follow(p)
+        self.assertAlmostEqual(camera.screen_rect(p.x, p.y, p.x + p.width, p.y + p.height)[0], 622)
+        self.assertEqual(p.x, 1600)
+        p.x = 3100
+        camera.follow(p)
+        self.assertEqual(camera.x, 1920)
+        small = Camera(500)
+        small.follow(p)
+        self.assertEqual(small.x, 0)
+
+    def test_scrolled_combat_uses_world_coordinates(self):
+        from main import Game
+        from enemy import Enemy
+        import sdl2
+        game = Game()
+        game.player.x = 1700
+        game.enemies = [Enemy(1780)]
+        game.enemies[0].hp = 10
+        game.inputs.pressed = {sdl2.SDLK_x}
+        game.update(0.05)
+        game.inputs.pressed.clear()
+        for _ in range(10):
+            game.update(0.05)
+        self.assertGreater(game.camera.x, 0)
+        self.assertEqual(game.enemies, [])
     def test_spawn_and_right_boundary(self):
         stage = VillageStage()
         p = Player(*stage.spawn)

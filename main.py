@@ -11,6 +11,8 @@ from world import World
 from combat_system import CombatSystem
 from training_dummy import TrainingDummy
 from enemy import Enemy
+from stage import VillageStage
+from camera import Camera
 from weapon_data import WEAPONS
 
 from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH, PHYSICS_STEP
@@ -57,11 +59,13 @@ class Game:
     def __init__(self):
         self.inputs = InputState()
         self.elapsed = 0.0
-        self.world = World()
+        self.stage = VillageStage()
+        self.world = self.stage.create_world()
+        self.camera = Camera(self.stage.width)
         self.player = Player()
         self.combat = CombatSystem()
         self.dummy = TrainingDummy()
-        self.enemies = [Enemy()]
+        self.enemies = self.stage.create_enemies()
 
     def restart(self):
         # 임시 시작점으로 전부 재생성하여 오래된 공격·예약·입력을 남기지 않는다.
@@ -105,17 +109,28 @@ class Game:
                     enemy.state = "IDLE"
                 break
             first = False
+        self.camera.follow(self.player)
 
     def draw(self):
+        def draw_world(left, bottom, right, top, *color, **kwargs):
+            p2d.draw_rectangle(*self.camera.screen_rect(left, bottom, right, top),
+                              *color, **kwargs)
+
         # 내부 좌표는 왼쪽 아래 원점, 픽셀 단위. 이후 속도는 픽셀/초.
         p2d.clear_canvas()
         p2d.draw_rectangle(0, 0, WINDOW_WIDTH - 1, WINDOW_HEIGHT - 1,
                           24, 28, 36, filled=True)
         for solid in self.world.solids:
             color = (110, 170, 140) if solid.one_way else (95, 110, 125)
-            p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
+            draw_world(solid.left, solid.bottom, solid.right, solid.top,
                               *color, filled=True)
         player = self.player
+        # 지역 표식은 충돌하지 않는 임시 장승/문 형태다.
+        for start, _ in self.stage.regions[1:]:
+            draw_world(start, 100, start + 20, 195, 100, 70, 45, filled=True)
+            draw_world(start - 12, 165, start + 32, 175, 160, 130, 70, filled=True)
+        gate = self.stage.boss_entrance
+        draw_world(gate.left, gate.bottom, gate.right, gate.top, 170, 95, 180)
         p2d.draw_rectangle(25, 635, 225, 653, 70, 40, 45, filled=True)
         if player.hp > 0:
             p2d.draw_rectangle(25, 635, 25 + 200 * player.hp / player.max_hp,
@@ -126,18 +141,18 @@ class Game:
                          enemy.state, (190, 90, 70))
             if enemy.hit_flash > 0:
                 color = (255, 230, 220)
-            p2d.draw_rectangle(enemy.x, enemy.y, enemy.x + enemy.width,
+            draw_world(enemy.x, enemy.y, enemy.x + enemy.width,
                               enemy.y + enemy.height, *color, filled=True)
-            p2d.draw_rectangle(enemy.x, enemy.y + enemy.height + 9,
+            draw_world(enemy.x, enemy.y + enemy.height + 9,
                               enemy.x + enemy.width * enemy.hp / enemy.max_hp,
                               enemy.y + enemy.height + 15, 240, 65, 65, filled=True)
             if enemy.stagger > 0:
-                p2d.draw_rectangle(enemy.x, enemy.y + enemy.height + 19,
+                draw_world(enemy.x, enemy.y + enemy.height + 19,
                                   enemy.x + enemy.width * enemy.stagger / enemy.stagger_limit,
                                   enemy.y + enemy.height + 24, 180, 80, 230, filled=True)
             if enemy.attack is not None and enemy.attack.phase == "ACTIVE":
                 box = enemy.attack.bounds
-                p2d.draw_rectangle(box.left, box.bottom, box.right, box.top, 255, 70, 70)
+                draw_world(box.left, box.bottom, box.right, box.top, 255, 70, 70)
         weapon_color = (110, 190, 250) if player.weapon == "basic" else (215, 145, 65)
         p2d.draw_rectangle(130, 675, 155 if player.weapon == "basic" else 180,
                           695, *weapon_color, filled=True)
@@ -145,22 +160,22 @@ class Game:
         if dummy.hp > 0:
             color = ((255, 245, 220) if dummy.hit_flash > 0 else
                      (180, 100, 220) if dummy.stagger_remaining > 0 else (170, 125, 75))
-            p2d.draw_rectangle(dummy.x, dummy.y, dummy.x + dummy.width,
+            draw_world(dummy.x, dummy.y, dummy.x + dummy.width,
                               dummy.y + dummy.height, *color, filled=True)
-        p2d.draw_rectangle(dummy.x - 10, 205, dummy.x + 70, 213, 70, 40, 40, filled=True)
+        draw_world(dummy.x - 10, 205, dummy.x + 70, 213, 70, 40, 40, filled=True)
         if dummy.hp > 0:
-            p2d.draw_rectangle(dummy.x - 10, 205,
+            draw_world(dummy.x - 10, 205,
                               dummy.x - 10 + 80 * dummy.hp / dummy.max_hp,
                               213, 220, 85, 85, filled=True)
         if dummy.stagger > 0:
-            p2d.draw_rectangle(dummy.x - 10, 192,
+            draw_world(dummy.x - 10, 192,
                               dummy.x - 10 + 80 * dummy.stagger / dummy.stagger_limit,
                               198, 190, 110, 245, filled=True)
         if player.attack is not None and player.attack.phase == "ACTIVE":
             box = player.attack.bounds
-            p2d.draw_rectangle(box.left, box.bottom, box.right, box.top, 255, 130, 50)
+            draw_world(box.left, box.bottom, box.right, box.top, 255, 130, 50)
         for hazard in self.world.hazards:
-            p2d.draw_rectangle(hazard.left, hazard.bottom, hazard.right, hazard.top,
+            draw_world(hazard.left, hazard.bottom, hazard.right, hazard.top,
                               180, 55, 65, filled=True)
         for index in range(2):
             color = (80, 220, 240) if index < player.dash_charges else (65, 70, 80)
@@ -180,24 +195,24 @@ class Game:
             for index in range(5):
                 flame_x = player.x - 12 + index * 15
                 rise = ((self.elapsed * 120 + index * 11) % 30)
-                p2d.draw_rectangle(flame_x, player.y - 4 + rise,
+                draw_world(flame_x, player.y - 4 + rise,
                                   flame_x + 8, player.y + 30 + rise,
                                   50, 170, 250, filled=True)
-                p2d.draw_rectangle(flame_x + 2, player.y + rise,
+                draw_world(flame_x + 2, player.y + rise,
                                   flame_x + 6, player.y + 18 + rise,
                                   170, 250, 250, filled=True)
         # 외형은 충돌 상자보다 좌우 6px, 위쪽 8px 크다.
-        p2d.draw_rectangle(player.x - 6, player.y, player.x + player.width + 6,
+        draw_world(player.x - 6, player.y, player.x + player.width + 6,
                           player.y + player.height + 8, *color, filled=True)
-        p2d.draw_rectangle(player.x, player.y, player.x + player.width,
+        draw_world(player.x, player.y, player.x + player.width,
                           player.y + player.height, 255, 215, 90)
         eye_x = player.x + (player.width - 7 if player.facing > 0 else 7)
-        p2d.draw_rectangle(eye_x - 2, player.y + 48, eye_x + 2,
+        draw_world(eye_x - 2, player.y + 48, eye_x + 2,
                           player.y + 53, 24, 28, 36, filled=True)
         if player.attack is not None:
             phase_color = {"STARTUP": (245, 220, 70), "ACTIVE": (255, 130, 50),
                            "RECOVERY": (140, 130, 180)}[player.attack.phase]
-            p2d.draw_rectangle(player.x, player.y + player.height + 14,
+            draw_world(player.x, player.y + player.height + 14,
                               player.x + player.width, player.y + player.height + 20,
                               *phase_color, filled=True)
         if player.hp <= 0:
@@ -242,7 +257,7 @@ def run(frame_hook=None):
             fps_elapsed += raw_dt
             if fps_elapsed >= 0.25 or frames == 1:
                 fps = fps_frames / fps_elapsed if fps_elapsed else 0.0
-                title = (f"{WINDOW_TITLE} | {fps:.0f} FPS | Left/Right: move"
+                title = (f"{WINDOW_TITLE} | {game.stage.region_at(game.player.x)} | {fps:.0f} FPS | Left/Right: move"
                          " | C: jump | Down+C: drop | Z: dash | X: attack | Space: switch | R: restart | Esc: quit"
                          f" | Weapon: {WEAPONS[game.player.weapon].name}"
                          f"{' (queued)' if game.player.switch_queued else ''}"
