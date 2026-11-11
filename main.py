@@ -80,6 +80,7 @@ class Game:
         while remaining > 1e-9:
             step = min(remaining, PHYSICS_STEP)
             remaining -= step
+            self.combat.update_target(self.player, step)
             self.player.update(step, direction, first and sdl2.SDLK_c in self.inputs.pressed,
                                self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
                                dash_pressed=first and sdl2.SDLK_z in self.inputs.pressed,
@@ -90,7 +91,10 @@ class Game:
                 self.combat.update_target(enemy, step)
                 enemy.update(step, self.player, self.world)
             if self.player.attack is not None:
-                self.combat.resolve([self.player.attack], [self.dummy])
+                self.combat.resolve([self.player.attack], [self.dummy, *self.enemies])
+            for enemy in self.enemies:
+                if enemy.attack is not None:
+                    self.combat.resolve([enemy.attack], [self.player])
             first = False
 
     def draw(self):
@@ -103,15 +107,25 @@ class Game:
             p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
                               *color, filled=True)
         player = self.player
+        p2d.draw_rectangle(25, 635, 225, 653, 70, 40, 45, filled=True)
+        if player.hp > 0:
+            p2d.draw_rectangle(25, 635, 25 + 200 * player.hp / player.max_hp,
+                              653, 230, 80, 100, filled=True)
         for enemy in self.enemies:
             color = {"STARTUP": (240, 210, 65), "ACTIVE": (245, 75, 60),
                      "RECOVERY": (125, 90, 105), "STAGGER": (190, 90, 235)}.get(
                          enemy.state, (190, 90, 70))
+            if enemy.hit_flash > 0:
+                color = (255, 230, 220)
             p2d.draw_rectangle(enemy.x, enemy.y, enemy.x + enemy.width,
                               enemy.y + enemy.height, *color, filled=True)
             p2d.draw_rectangle(enemy.x, enemy.y + enemy.height + 9,
                               enemy.x + enemy.width * enemy.hp / enemy.max_hp,
                               enemy.y + enemy.height + 15, 240, 65, 65, filled=True)
+            if enemy.stagger > 0:
+                p2d.draw_rectangle(enemy.x, enemy.y + enemy.height + 19,
+                                  enemy.x + enemy.width * enemy.stagger / enemy.stagger_limit,
+                                  enemy.y + enemy.height + 24, 180, 80, 230, filled=True)
             if enemy.attack is not None and enemy.attack.phase == "ACTIVE":
                 box = enemy.attack.bounds
                 p2d.draw_rectangle(box.left, box.bottom, box.right, box.top, 255, 70, 70)
@@ -144,7 +158,9 @@ class Game:
             p2d.draw_rectangle(25 + index * 45, 675, 60 + index * 45, 695,
                               *color, filled=True)
         color = (90, 160, 240) if player.grounded else (100, 230, 160)
-        if player.invulnerable:
+        if player.hit_flash > 0:
+            color = (255, 85, 95)
+        elif player.invulnerable:
             color = (245, 245, 255)
         elif player.hazard_exposed:
             color = (255, 80, 90)
@@ -218,6 +234,7 @@ def run(frame_hook=None):
                          f" | Charges: {game.player.dash_charges}/2"
                          f" | Recharge: {game.player.recharge_remaining:.1f}s"
                          f" | Dummy HP: {game.dummy.hp}"
+                         f" | Player HP: {game.player.hp}"
                          f" | Hazard hits: {game.player.hazard_hits}"
                          f" | Attack: {game.player.attack.data.name + ' ' + game.player.attack.phase if game.player.attack else 'Idle'}")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))

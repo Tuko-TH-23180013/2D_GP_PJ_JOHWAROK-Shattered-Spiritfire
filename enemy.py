@@ -13,6 +13,7 @@ class Enemy:
 
     def __init__(self, x=900.0, y=100.0):
         self.x, self.y = x, y
+        self.team = "enemy"
         self.vy = 0.0
         self.facing = -1
         self.max_hp = self.hp = 120
@@ -28,6 +29,14 @@ class Enemy:
     @property
     def bounds(self):
         return Rect(self.x, self.y, self.x + self.width, self.y + self.height)
+
+    def on_combat_hit(self):
+        # 피해/스태거 계산은 CombatSystem이 수행한 뒤 행동만 정리한다.
+        if self.hp <= 0:
+            self.state, self.attack = "DEAD", None
+        elif self.stagger_remaining > 0:
+            self.state, self.attack = "STAGGER", None
+            self.cooldown = 0.30
 
     def update(self, dt, player, world):
         if self.hp <= 0:

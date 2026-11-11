@@ -2,9 +2,64 @@ import unittest
 from enemy import Enemy
 from player import Player
 from world import World
+from attack import Attack, BASIC_COMBO
+from combat_system import CombatSystem
+from enemy import ENEMY_ATTACK
 
 
 class EnemyTests(unittest.TestCase):
+    def test_damage_keeps_player_attack_and_combo(self):
+        p, e, combat = Player(820), Enemy(), CombatSystem()
+        p.grounded = True
+        p.request_attack()
+        p.request_attack()
+        current = p.attack
+        attack = Attack(e, ENEMY_ATTACK)
+        attack.advance(0.45)
+        combat.resolve([attack], [p])
+        self.assertEqual(p.hp, 85)
+        self.assertIs(p.attack, current)
+        self.assertTrue(p.attack_queued)
+        self.assertGreater(p.hurt_invulnerability, 0)
+
+    def test_hurt_invulnerability_blocks_followup_then_expires(self):
+        p, e, combat = Player(820), Enemy(), CombatSystem()
+        for expected in (85, 85):
+            attack = Attack(e, ENEMY_ATTACK)
+            attack.advance(0.45)
+            combat.begin_frame()
+            combat.resolve([attack], [p])
+            self.assertEqual(p.hp, expected)
+        combat.update_target(p, 0.51)
+        combat.begin_frame()
+        combat.resolve([attack], [p])
+        self.assertEqual(p.hp, 70)
+
+    def test_normal_hits_preserve_enemy_attack_until_stagger(self):
+        e, p, combat = Enemy(), Player(820), CombatSystem()
+        e.update(0.01, p, World())
+        current = e.attack
+        for index in range(4):
+            attack = Attack(p, BASIC_COMBO[0])
+            attack.advance(0.1)
+            combat.begin_frame()
+            combat.resolve([attack], [e])
+            if index < 3:
+                self.assertIs(e.attack, current)
+        self.assertEqual(e.state, 'STAGGER')
+        self.assertIsNone(e.attack)
+        combat.update_target(e, 0.61)
+        self.assertEqual(e.stagger, 0)
+
+    def test_dash_and_switch_block_enemy_damage(self):
+        for action in ('start_dash', 'request_switch'):
+            p, e, combat = Player(820), Enemy(), CombatSystem()
+            getattr(p, action)()
+            attack = Attack(e, ENEMY_ATTACK)
+            attack.advance(0.45)
+            combat.resolve([attack], [p])
+            self.assertEqual(p.hp, 100)
+
     def test_idle_chase_attack_and_new_attack_instance(self):
         e, p, world = Enemy(), Player(), World()
         e.update(0.01, p, world)

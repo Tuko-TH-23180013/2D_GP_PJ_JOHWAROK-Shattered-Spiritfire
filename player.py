@@ -2,6 +2,7 @@
 
 from attack import Attack
 from weapon_data import WEAPONS
+from world import Rect
 
 from settings import (GRAVITY, JUMP_SPEED, MAX_FALL_SPEED, MOVE_SPEED,
                       PHYSICS_STEP, PLAYER_HEIGHT, PLAYER_WIDTH,
@@ -18,6 +19,14 @@ class Player:
         if weapon not in WEAPONS:
             raise ValueError(f"알 수 없는 무기: {weapon}")
         self.weapon = weapon
+        self.team = "player"
+        self.max_hp = self.hp = 100
+        self.hit_flash = 0.0
+        self.hurt_invulnerability = 0.0
+        self.hurt_invulnerability_duration = 0.5  # 임시 피격 후 무적.
+        self.stagger = 0
+        self.stagger_limit = None  # 생존 중 피격은 공격·콤보를 끊지 않는다.
+        self.stagger_remaining = 0.0
         self.x = x
         self.y = y
         self.vy = 0.0
@@ -40,8 +49,13 @@ class Player:
         self.switch_invulnerability = 0.0
 
     @property
+    def bounds(self):
+        return Rect(self.x, self.y, self.x + self.width, self.y + self.height)
+
+    @property
     def invulnerable(self):
-        return self.dash_invulnerable or self.switch_invulnerability > 1e-9
+        return (self.dash_invulnerable or self.switch_invulnerability > 1e-9
+                or self.hurt_invulnerability > 1e-9)
 
     def request_switch(self):
         if self.switch_remaining > 1e-9:
