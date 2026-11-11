@@ -10,6 +10,7 @@ from player import Player
 from world import World
 from combat_system import CombatSystem
 from training_dummy import TrainingDummy
+from enemy import Enemy
 from weapon_data import WEAPONS
 
 from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH, PHYSICS_STEP
@@ -60,6 +61,7 @@ class Game:
         self.player = Player()
         self.combat = CombatSystem()
         self.dummy = TrainingDummy()
+        self.enemies = [Enemy()]
 
     def update(self, dt):
         self.elapsed += dt
@@ -84,6 +86,9 @@ class Game:
                                attack_pressed=first and sdl2.SDLK_x in self.inputs.pressed,
                                switch_pressed=first and sdl2.SDLK_SPACE in self.inputs.pressed)
             self.combat.update_target(self.dummy, step)
+            for enemy in self.enemies:
+                self.combat.update_target(enemy, step)
+                enemy.update(step, self.player, self.world)
             if self.player.attack is not None:
                 self.combat.resolve([self.player.attack], [self.dummy])
             first = False
@@ -98,6 +103,18 @@ class Game:
             p2d.draw_rectangle(solid.left, solid.bottom, solid.right, solid.top,
                               *color, filled=True)
         player = self.player
+        for enemy in self.enemies:
+            color = {"STARTUP": (240, 210, 65), "ACTIVE": (245, 75, 60),
+                     "RECOVERY": (125, 90, 105), "STAGGER": (190, 90, 235)}.get(
+                         enemy.state, (190, 90, 70))
+            p2d.draw_rectangle(enemy.x, enemy.y, enemy.x + enemy.width,
+                              enemy.y + enemy.height, *color, filled=True)
+            p2d.draw_rectangle(enemy.x, enemy.y + enemy.height + 9,
+                              enemy.x + enemy.width * enemy.hp / enemy.max_hp,
+                              enemy.y + enemy.height + 15, 240, 65, 65, filled=True)
+            if enemy.attack is not None and enemy.attack.phase == "ACTIVE":
+                box = enemy.attack.bounds
+                p2d.draw_rectangle(box.left, box.bottom, box.right, box.top, 255, 70, 70)
         weapon_color = (110, 190, 250) if player.weapon == "basic" else (215, 145, 65)
         p2d.draw_rectangle(130, 675, 155 if player.weapon == "basic" else 180,
                           695, *weapon_color, filled=True)
