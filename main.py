@@ -12,6 +12,7 @@ from training_dummy import TrainingDummy
 from stage import VillageStage
 from camera import Camera
 from checkpoint import Checkpoint
+from boss import Boss
 from weapon_data import WEAPONS
 
 from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH, PHYSICS_STEP
@@ -67,6 +68,23 @@ class Game:
         self.combat = CombatSystem()
         self.dummy = TrainingDummy()
         self.enemies = self.stage.create_enemies()
+        self.boss = None
+        self.boss_active = False
+        self.victory = False
+
+    def start_boss(self):
+        if not self.at_boss_gate or self.boss_active or self.player.hp <= 0:
+            return False
+        hp, weapon = self.player.hp, self.player.weapon
+        self.player = Player(*self.stage.arena_spawn, weapon=weapon)
+        self.player.hp = hp
+        self.boss = Boss()
+        self.boss_active = True
+        self.world.solids.append(self.stage.arena_barrier)
+        self.inputs.held.clear()
+        self.inputs.pressed.clear()
+        self.camera.follow(self.player)
+        return True
 
     def restart(self):
         active = self.checkpoint.active
@@ -80,7 +98,7 @@ class Game:
         if sdl2.SDLK_r in self.inputs.pressed:
             self.restart()
             return
-        if self.player.hp <= 0:
+        if self.player.hp <= 0 or self.victory:
             return
         self.elapsed += dt
         direction = (int(sdl2.SDLK_RIGHT in self.inputs.held)
@@ -101,25 +119,44 @@ class Game:
             for enemy in self.enemies:
                 self.combat.update_target(enemy, step)
                 enemy.update(step, self.player, self.world)
+            if self.boss_active:
+                self.combat.update_target(self.boss, step)
+                self.boss.update(step, self.player, self.world)
             if self.player.attack is not None:
-                self.combat.resolve([self.player.attack], [self.dummy, *self.enemies])
+                targets = [self.dummy, *self.enemies]
+                if self.boss_active:
+                    targets.append(self.boss)
+                self.combat.resolve([self.player.attack], targets)
+            if self.boss_active and self.boss.hp <= 0:
+                self.victory = True
+                self.player.attack = None
+                self.player.attack_queued = self.player.switch_queued = False
+                for enemy in self.enemies:
+                    enemy.attack = None
+                break
             for enemy in self.enemies:
                 if enemy.attack is not None:
                     self.combat.resolve([enemy.attack], [self.player])
+            if self.boss_active and self.boss.attack is not None:
+                self.combat.resolve([self.boss.attack], [self.player])
             # 순회가 끝난 뒤 사망 객체를 제거한다.
             self.enemies = [enemy for enemy in self.enemies if enemy.hp > 0]
             if self.player.hp <= 0:
                 for enemy in self.enemies:
                     enemy.attack = None
                     enemy.state = "IDLE"
+                if self.boss is not None:
+                    self.boss.attack = None
                 break
             first = False
         self.camera.follow(self.player)
-        if sdl2.SDLK_UP in self.inputs.pressed:
-            self.checkpoint.activate(self.player)
         self.at_boss_gate = (self.player.hp > 0
                             and self.player.x + self.player.width >= self.stage.boss_entrance.left
+                            and self.player.x <= self.stage.boss_entrance.right
                             and self.player.y < self.stage.boss_entrance.top)
+        if sdl2.SDLK_UP in self.inputs.pressed:
+            self.checkpoint.activate(self.player)
+            self.start_boss()
 
     def draw(self):
         def draw_world(left, bottom, right, top, *color, **kwargs):
@@ -152,12 +189,18 @@ class Game:
         if player.hp > 0:
             p2d.draw_rectangle(25, 635, 25 + 200 * player.hp / player.max_hp,
                               653, 230, 80, 100, filled=True)
-        for enemy in self.enemies:
+        visible_enemies = self.enemies + ([self.boss] if self.boss_active and self.boss.hp > 0 else [])
+        for enemy in visible_enemies:
             color = {"STARTUP": (240, 210, 65), "ACTIVE": (245, 75, 60),
                      "RECOVERY": (125, 90, 105), "STAGGER": (190, 90, 235)}.get(
                          enemy.state, (190, 90, 70))
             if enemy.hit_flash > 0:
                 color = (255, 230, 220)
+            if isinstance(enemy, Boss):
+                if enemy.state in ("DOWN", "WAKE"):
+                    color = (100, 100, 210) if enemy.state == "DOWN" else (150, 130, 210)
+                elif enemy.state == "STARTUP":
+                    color = (240, 200, 65) if enemy.pattern == "SWING" else (230, 100, 220)
             draw_world(enemy.x, enemy.y, enemy.x + enemy.width,
                               enemy.y + enemy.height, *color, filled=True)
             draw_world(enemy.x, enemy.y + enemy.height + 9,
@@ -232,7 +275,18 @@ class Game:
             draw_world(player.x, player.y + player.height + 14,
                               player.x + player.width, player.y + player.height + 20,
                               *phase_color, filled=True)
-        if player.hp <= 0:
+        if self.boss_active:
+            p2d.draw_rectangle(350, 665, 1000, 690, 70, 35, 45, filled=True)
+            if self.boss.hp > 0:
+                p2d.draw_rectangle(350, 665, 350 + 650 * self.boss.hp / self.boss.max_hp,
+                                  690, 210, 55, 85, filled=True)
+            if self.boss.stagger > 0:
+                p2d.draw_rectangle(350, 650, 350 + 650 * self.boss.stagger / self.boss.stagger_limit,
+                                  657, 140, 100, 240, filled=True)
+        if self.victory:
+            p2d.draw_rectangle(410, 290, 870, 430, 20, 65, 50, filled=True)
+            p2d.draw_rectangle(410, 290, 870, 430, 100, 245, 180)
+        elif player.hp <= 0:
             # 제목 표시줄에 재시작 안내, 화면에는 사망 상태를 나타내는 붉은 패널.
             p2d.draw_rectangle(450, 300, 830, 420, 65, 20, 30, filled=True)
             p2d.draw_rectangle(450, 300, 830, 420, 230, 70, 90)
@@ -284,13 +338,19 @@ def run(frame_hook=None):
                          f" | Player HP: {game.player.hp}"
                          f" | Hazard hits: {game.player.hazard_hits}"
                          f" | Attack: {game.player.attack.data.name + ' ' + game.player.attack.phase if game.player.attack else 'Idle'}")
-                if game.player.hp <= 0:
+                if game.victory:
+                    title = "JOHWAROK - VICTORY! Old Dokkaebi defeated | R: retry | Esc: quit"
+                elif game.player.hp <= 0:
                     title = "JOHWAROK - YOU DIED | Press R to restart | Esc: quit"
                 elif game.checkpoint.can_activate(game.player):
                     title = ("JOHWAROK - Checkpoint ACTIVE | R: respawn here" if game.checkpoint.active
                              else "JOHWAROK - Press UP to activate checkpoint | R: restart")
-                elif game.at_boss_gate:
-                    title = "JOHWAROK - Boss gate reached | Boss battle: next development stage | R: restart"
+                elif game.at_boss_gate and not game.boss_active:
+                    title = "JOHWAROK - Press UP to challenge Old Dokkaebi | R: restart"
+                elif game.boss_active:
+                    title = (f"JOHWAROK - Old Dokkaebi HP {game.boss.hp}/{game.boss.max_hp}"
+                             f" | {game.boss.pattern}: {game.boss.state}"
+                             f" | Player HP {game.player.hp} | X: attack | C: jump | Z: dash | Space: switch | R: retry")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0

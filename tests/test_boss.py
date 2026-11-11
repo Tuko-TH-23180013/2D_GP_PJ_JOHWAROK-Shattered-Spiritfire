@@ -7,6 +7,80 @@ from attack import Attack, BASIC_COMBO
 
 
 class BossTests(unittest.TestCase):
+    def enter(self):
+        from main import Game
+        import sdl2
+        game = Game()
+        game.checkpoint.active = True
+        game.player.x = 3100
+        game.inputs.pressed = {sdl2.SDLK_UP}
+        game.update(1 / 60)
+        return game
+
+    def test_gate_start_once_and_arena_barrier(self):
+        game = self.enter()
+        self.assertTrue(game.boss_active)
+        boss = game.boss
+        self.assertFalse(game.start_boss())
+        self.assertIs(game.boss, boss)
+        game.world.move_x(game.player, -1000)
+        self.assertEqual(game.player.x, game.stage.arena_barrier.right)
+
+    def test_boss_death_retry_resets_arena_and_boss(self):
+        import sdl2
+        game = self.enter()
+        game.player.hp = 1
+        game.player.x = game.boss.x - 80
+        for _ in range(240):
+            game.update(1 / 60)
+            if game.player.hp == 0:
+                break
+        self.assertEqual(game.player.hp, 0)
+        self.assertIsNone(game.boss.attack)
+        game.inputs.pressed = {sdl2.SDLK_r}
+        game.update(1 / 60)
+        self.assertEqual(game.player.x, 2500)
+        self.assertFalse(game.boss_active or game.victory)
+        self.assertIsNone(game.boss)
+        self.assertNotIn(game.stage.arena_barrier, game.world.solids)
+
+    def test_real_damage_defeats_boss_and_freezes_victory(self):
+        import sdl2
+        game = self.enter()
+        # 조작 숙련도 대신 공격→피해→다운/기상→승리 연결을 검증하는 무적 fixture.
+        game.player.hurt_invulnerability = 100
+        for frame in range(2400):
+            game.player.x = game.boss.x - 70
+            game.player.facing = 1
+            game.inputs.pressed = {sdl2.SDLK_x} if frame % 12 == 0 else set()
+            game.update(1 / 60)
+            if game.victory:
+                break
+        self.assertTrue(game.victory)
+        self.assertEqual(game.boss.hp, 0)
+        self.assertIsNone(game.player.attack)
+        x, elapsed = game.player.x, game.elapsed
+        game.inputs.pressed = {sdl2.SDLK_x, sdl2.SDLK_SPACE}
+        game.inputs.held = {sdl2.SDLK_RIGHT}
+        game.update(0.05)
+        self.assertEqual((game.player.x, game.elapsed), (x, elapsed))
+        game.inputs.pressed = {sdl2.SDLK_r}
+        game.update(0.05)
+        self.assertFalse(game.victory)
+
+    def test_giant_hit_has_same_result_across_frame_rates(self):
+        import sdl2
+        for fps in (20, 60, 144):
+            game = self.enter()
+            game.player.x = game.boss.x - 80
+            game.player.weapon = 'giant'
+            game.inputs.pressed = {sdl2.SDLK_x}
+            game.update(1 / fps)
+            game.inputs.pressed.clear()
+            for _ in range(fps):
+                game.update(1 / fps)
+            self.assertEqual(game.boss.hp, 476)
+
     def test_down_wake_damage_and_repeat_recovery(self):
         boss, player, combat = Boss(400), Player(300), CombatSystem()
         world = World()

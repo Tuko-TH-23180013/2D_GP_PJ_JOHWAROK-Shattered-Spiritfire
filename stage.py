@@ -4,11 +4,13 @@ from enemy import Enemy
 
 
 class VillageStage:
-    width = 3200
+    width = 4400
     height = 720
     spawn = (120.0, 100.0)
     checkpoint_spawn = (2500.0, 100.0)
     boss_entrance = Rect(3000, 100, 3150, 300)
+    arena_barrier = Rect(3180, 100, 3200, 720)
+    arena_spawn = (3240.0, 100.0)
     regions = ((0, "Village entrance"), (280, "Platforms"),
                (900, "Village combat"), (2400, "Checkpoint"), (2900, "Boss gate"))
 
