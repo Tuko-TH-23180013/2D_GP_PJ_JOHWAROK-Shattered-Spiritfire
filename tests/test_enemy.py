@@ -8,6 +8,71 @@ from enemy import ENEMY_ATTACK
 
 
 class EnemyTests(unittest.TestCase):
+    def test_dead_enemy_cannot_damage_or_act(self):
+        p, e, combat = Player(820), Enemy(), CombatSystem()
+        e.update(0.01, p, World())
+        old_attack = e.attack
+        old_attack.advance(0.5)
+        e.hp = 0
+        e.on_combat_hit()
+        combat.resolve([old_attack], [p])
+        e.update(0.01, p, World())
+        self.assertEqual(p.hp, 100)
+        self.assertIsNone(e.attack)
+        self.assertEqual(e.state, 'DEAD')
+
+    def test_lethal_hit_clears_player_actions(self):
+        p, e, combat = Player(820), Enemy(), CombatSystem()
+        p.request_attack()
+        p.request_attack()
+        p.request_switch()
+        p.hp = 10
+        attack = Attack(e, ENEMY_ATTACK)
+        attack.advance(0.45)
+        combat.resolve([attack], [p])
+        self.assertEqual(p.hp, 0)
+        self.assertIsNone(p.attack)
+        self.assertFalse(p.attack_queued or p.switch_queued)
+        self.assertFalse(p.start_dash())
+        p.request_attack()
+        self.assertIsNone(p.attack)
+
+    def test_death_and_restart_clear_everything(self):
+        from main import Game
+        import sdl2
+        game = Game()
+        for _ in range(5):
+            game.player.x = 820
+            game.player.hp = 15
+            for _ in range(120):
+                game.update(1 / 60)
+            self.assertEqual(game.player.hp, 0)
+            old = game.player
+            game.inputs.held = {sdl2.SDLK_RIGHT}
+            game.inputs.pressed = {sdl2.SDLK_r, sdl2.SDLK_x, sdl2.SDLK_SPACE}
+            game.update(1 / 60)
+            self.assertIsNot(game.player, old)
+            self.assertEqual((game.player.x, game.player.hp, game.player.dash_charges), (120, 100, 2))
+            self.assertEqual(len(game.enemies), 1)
+            self.assertEqual(game.enemies[0].hp, 120)
+            self.assertFalse(game.inputs.held or game.inputs.pressed)
+            self.assertIsNone(game.player.attack)
+            self.assertFalse(game.player.switch_queued)
+
+    def test_game_removes_killed_enemy_and_prevents_counterattack(self):
+        from main import Game
+        import sdl2
+        game = Game()
+        game.player.x = 820
+        game.enemies[0].hp = 10
+        game.inputs.pressed = {sdl2.SDLK_x}
+        game.update(0.05)
+        game.inputs.pressed.clear()
+        for _ in range(30):
+            game.update(0.05)
+        self.assertEqual(game.enemies, [])
+        self.assertEqual(game.player.hp, 100)
+
     def test_damage_keeps_player_attack_and_combo(self):
         p, e, combat = Player(820), Enemy(), CombatSystem()
         p.grounded = True

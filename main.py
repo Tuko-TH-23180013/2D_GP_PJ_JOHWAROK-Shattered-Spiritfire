@@ -1,4 +1,4 @@
-"""조화록: 실행 루프와 4단계 무기 전환 전투 연습장."""
+"""조화록: 실행 루프와 5단계 생존 전투 연습장."""
 
 import ctypes
 from dataclasses import dataclass, field
@@ -63,17 +63,19 @@ class Game:
         self.dummy = TrainingDummy()
         self.enemies = [Enemy()]
 
+    def restart(self):
+        # 임시 시작점으로 전부 재생성하여 오래된 공격·예약·입력을 남기지 않는다.
+        self.__init__()
+
     def update(self, dt):
+        if sdl2.SDLK_r in self.inputs.pressed:
+            self.restart()
+            return
+        if self.player.hp <= 0:
+            return
         self.elapsed += dt
         direction = (int(sdl2.SDLK_RIGHT in self.inputs.held)
                      - int(sdl2.SDLK_LEFT in self.inputs.held))
-        if sdl2.SDLK_r in self.inputs.pressed:
-            self.dummy = TrainingDummy()
-            self.player.attack = None
-            self.player.attack_queued = False
-            self.player.switch_queued = False
-            self.player.switch_remaining = 0.0
-            self.player.switch_invulnerability = 0.0
         self.combat.begin_frame()
         remaining = dt
         first = True
@@ -95,6 +97,13 @@ class Game:
             for enemy in self.enemies:
                 if enemy.attack is not None:
                     self.combat.resolve([enemy.attack], [self.player])
+            # 순회가 끝난 뒤 사망 객체를 제거한다.
+            self.enemies = [enemy for enemy in self.enemies if enemy.hp > 0]
+            if self.player.hp <= 0:
+                for enemy in self.enemies:
+                    enemy.attack = None
+                    enemy.state = "IDLE"
+                break
             first = False
 
     def draw(self):
@@ -191,6 +200,12 @@ class Game:
             p2d.draw_rectangle(player.x, player.y + player.height + 14,
                               player.x + player.width, player.y + player.height + 20,
                               *phase_color, filled=True)
+        if player.hp <= 0:
+            # 제목 표시줄에 재시작 안내, 화면에는 사망 상태를 나타내는 붉은 패널.
+            p2d.draw_rectangle(450, 300, 830, 420, 65, 20, 30, filled=True)
+            p2d.draw_rectangle(450, 300, 830, 420, 230, 70, 90)
+            p2d.draw_rectangle(628, 325, 652, 395, 230, 70, 90, filled=True)
+            p2d.draw_rectangle(605, 348, 675, 372, 230, 70, 90, filled=True)
         p2d.update_canvas()
 
 
@@ -228,7 +243,7 @@ def run(frame_hook=None):
             if fps_elapsed >= 0.25 or frames == 1:
                 fps = fps_frames / fps_elapsed if fps_elapsed else 0.0
                 title = (f"{WINDOW_TITLE} | {fps:.0f} FPS | Left/Right: move"
-                         " | C: jump | Down+C: drop | Z: dash | X: attack | Space: switch | R: dummy | Esc: quit"
+                         " | C: jump | Down+C: drop | Z: dash | X: attack | Space: switch | R: restart | Esc: quit"
                          f" | Weapon: {WEAPONS[game.player.weapon].name}"
                          f"{' (queued)' if game.player.switch_queued else ''}"
                          f" | Charges: {game.player.dash_charges}/2"
@@ -237,6 +252,8 @@ def run(frame_hook=None):
                          f" | Player HP: {game.player.hp}"
                          f" | Hazard hits: {game.player.hazard_hits}"
                          f" | Attack: {game.player.attack.data.name + ' ' + game.player.attack.phase if game.player.attack else 'Idle'}")
+                if game.player.hp <= 0:
+                    title = "JOHWAROK - YOU DIED | Press R to restart | Esc: quit"
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0

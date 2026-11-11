@@ -42,6 +42,9 @@ class Enemy:
         if self.hp <= 0:
             self.state, self.attack = "DEAD", None
             return
+        if player.hp <= 0:
+            self.state, self.attack = "IDLE", None
+            return
         self.cooldown = max(0.0, self.cooldown - dt)
         old_vy = self.vy
         self.vy = max(-MAX_FALL_SPEED, self.vy - GRAVITY * dt)

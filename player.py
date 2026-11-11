@@ -58,7 +58,7 @@ class Player:
                 or self.hurt_invulnerability > 1e-9)
 
     def request_switch(self):
-        if self.switch_remaining > 1e-9:
+        if self.hp <= 0 or self.switch_remaining > 1e-9:
             return False
         if self.attack is not None:
             self.switch_queued = True
@@ -76,6 +76,8 @@ class Player:
         self.end_dash_invulnerability()
 
     def start_attack(self, combo_index=0):
+        if self.hp <= 0:
+            return
         airborne = not self.grounded
         weapon = WEAPONS[self.weapon]
         data = weapon.air if airborne else weapon.combo[combo_index]
@@ -84,7 +86,7 @@ class Player:
         self.end_dash_invulnerability()
 
     def request_attack(self):
-        if self.switch_remaining > 1e-9:
+        if self.hp <= 0 or self.switch_remaining > 1e-9:
             return
         if self.attack is None:
             self.start_attack()
@@ -117,6 +119,8 @@ class Player:
         self.dash_invulnerability = 0.0
 
     def start_dash(self):
+        if self.hp <= 0:
+            return False
         if self.attack is not None and self.attack.phase in ("STARTUP", "ACTIVE"):
             return False
         if self.dash_charges == 0 or self.dash_lockout > 1e-9:
@@ -134,6 +138,16 @@ class Player:
             self.perform_switch()
         return True
 
+    def on_combat_hit(self):
+        if self.hp > 0:
+            return
+        self.attack = None
+        self.attack_queued = self.switch_queued = False
+        self.dash_remaining = self.dash_invulnerability = self.dash_lockout = 0.0
+        self.switch_remaining = self.switch_invulnerability = 0.0
+        self.hurt_invulnerability = 0.0
+        self.vy = 0.0
+
     def advance_dash_timers(self, step):
         self.dash_remaining = max(0.0, self.dash_remaining - step)
         self.dash_invulnerability = max(0.0, self.dash_invulnerability - step)
@@ -147,7 +161,7 @@ class Player:
 
     def update(self, dt, direction, jump_pressed, world, down_held=False,
                dash_pressed=False, attack_pressed=False, switch_pressed=False):
-        if dt <= 0:
+        if dt <= 0 or self.hp <= 0:
             return
         # 발판에서 걸어 나간 경우에도 공중 추가 점프는 한 번만 허용한다.
         self.drop_platforms = {s for s in self.drop_platforms if self.y >= s.top}
