@@ -33,11 +33,12 @@ class CombatSystem:
                 target.hit_flash = 0.12
                 if hasattr(target, "hurt_invulnerability"):
                     target.hurt_invulnerability = target.hurt_invulnerability_duration
-                if target.stagger_limit is not None and target.stagger_remaining <= 0:
+                if (target.stagger_limit is not None and target.stagger_remaining <= 0
+                        and getattr(target, "can_accumulate_stagger", True)):
                     target.stagger = min(target.stagger_limit,
                                          target.stagger + attack.data.stagger)
                     if target.stagger >= target.stagger_limit:
-                        target.stagger_remaining = 0.6
+                        target.stagger_remaining = getattr(target, "stagger_duration", 0.6)
                 if hasattr(target, "on_combat_hit"):
                     target.on_combat_hit()
 

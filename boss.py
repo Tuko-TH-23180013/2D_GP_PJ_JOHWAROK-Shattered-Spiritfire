@@ -17,10 +17,19 @@ class Boss(Enemy):
         self.pattern = "SWING"
         self.state = "NORMAL"
         self.cooldown = 0.5
+        self.stagger_duration = 2.0
+        self.wake_remaining = 0.0
+
+    @property
+    def can_accumulate_stagger(self):
+        return self.state not in ("DOWN", "WAKE", "DEAD")
 
     def on_combat_hit(self):
         if self.hp <= 0:
             self.state, self.attack = "DEAD", None
+        elif self.stagger_remaining > 0 and self.state not in ("DOWN", "WAKE"):
+            self.state, self.attack = "DOWN", None
+            self.wake_remaining = 0.0
 
     def update(self, dt, player, world):
         if self.hp <= 0:
@@ -28,6 +37,17 @@ class Boss(Enemy):
             return
         if player.hp <= 0:
             self.attack = None
+            return
+        if self.state == "DOWN":
+            if self.stagger_remaining <= 0:
+                self.state = "WAKE"
+                self.wake_remaining = 0.7
+            return
+        if self.state == "WAKE":
+            self.wake_remaining = max(0.0, self.wake_remaining - dt)
+            if self.wake_remaining <= 1e-9:
+                self.state = "NORMAL"
+                self.cooldown = 0.45
             return
         if self.attack is not None:
             if self.pattern == "RUSH" and self.attack.phase == "ACTIVE":
