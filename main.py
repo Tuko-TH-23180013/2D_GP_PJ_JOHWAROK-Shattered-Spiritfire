@@ -184,6 +184,7 @@ class Game:
         p2d.clear_canvas()
         p2d.draw_rectangle(0, 0, WINDOW_WIDTH - 1, WINDOW_HEIGHT - 1,
                           24, 28, 36, filled=True)
+        self.visuals.draw_background(self.camera)
         for solid in self.world.solids:
             color = (110, 170, 140) if solid.one_way else (95, 110, 125)
             draw_world(solid.left, solid.bottom, solid.right, solid.top,
@@ -234,11 +235,7 @@ class Game:
         p2d.draw_rectangle(130, 675, 155 if player.weapon == "basic" else 180,
                           695, *weapon_color, filled=True)
         dummy = self.dummy
-        if dummy.hp > 0:
-            color = ((255, 245, 220) if dummy.hit_flash > 0 else
-                     (180, 100, 220) if dummy.stagger_remaining > 0 else (170, 125, 75))
-            draw_world(dummy.x, dummy.y, dummy.x + dummy.width,
-                              dummy.y + dummy.height, *color, filled=True)
+        self.visuals.draw_dummy(dummy, self.camera)
         draw_world(dummy.x - 10, 205, dummy.x + 70, 213, 70, 40, 40, filled=True)
         if dummy.hp > 0:
             draw_world(dummy.x - 10, 205,
@@ -308,6 +305,7 @@ class Game:
             p2d.draw_rectangle(450, 300, 830, 420, 230, 70, 90)
             p2d.draw_rectangle(628, 325, 652, 395, 230, 70, 90, filled=True)
             p2d.draw_rectangle(605, 348, 675, 372, 230, 70, 90, filled=True)
+        self.visuals.draw_labels(self)
         p2d.update_canvas()
 
 
