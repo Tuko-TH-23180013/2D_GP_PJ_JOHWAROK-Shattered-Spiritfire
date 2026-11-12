@@ -45,6 +45,8 @@ def main():
         assert game.camera.x > 0
         print('PASS: scrolled drawing, gate, SDL UP checkpoint, death, SDL R respawn')
     finally:
+        if 'game' in locals():
+            game.release_assets()
         p2d.close_canvas()
 
 

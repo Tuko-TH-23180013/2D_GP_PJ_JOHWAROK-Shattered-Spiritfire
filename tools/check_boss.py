@@ -63,6 +63,8 @@ def main():
         assert game.victory and game.boss.hp == 0
         print('PASS: SDL entry, DOWN/WAKE drawing, death, checkpoint retry, victory drawing')
     finally:
+        if 'game' in locals():
+            game.release_assets()
         p2d.close_canvas()
 
 

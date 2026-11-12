@@ -5,6 +5,24 @@ from sprite_animation import ASSET_ROOT, HeroAnimation, source_rect, draw_center
 
 
 class SpriteTests(unittest.TestCase):
+    def test_restart_reuses_loaded_resources(self):
+        from main import Game
+        game = Game()
+        resource = object()
+        game.visuals = resource
+        game.restart()
+        self.assertIs(game.visuals, resource)
+        self.assertEqual(game.hero_animation.frame, 0)
+
+    def test_game_attack_and_debug_key(self):
+        import sdl2
+        from main import Game
+        game = Game()
+        game.inputs.pressed = {sdl2.SDLK_x, sdl2.SDLK_F2}
+        game.update(1 / 60)
+        self.assertEqual(game.hero_animation.frame, 10)
+        self.assertTrue(game.show_hitboxes)
+
     def test_sheet_dimensions_and_crop_coordinates(self):
         raw = (ASSET_ROOT / 'hero.png').read_bytes()
         self.assertEqual(raw[:8], b'\x89PNG\r\n\x1a\n')

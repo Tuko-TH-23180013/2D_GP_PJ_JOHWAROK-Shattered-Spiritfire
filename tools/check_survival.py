@@ -41,6 +41,8 @@ def main():
         assert not game.enemies and game.player.hp == 100
         print('PASS: enemy attack, death drawing, SDL R restart, SDL X kill, cleanup')
     finally:
+        if 'game' in locals():
+            game.release_assets()
         p2d.close_canvas()
 
 

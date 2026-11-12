@@ -13,6 +13,8 @@ from stage import VillageStage
 from camera import Camera
 from checkpoint import Checkpoint
 from boss import Boss
+from sprite_animation import HeroAnimation
+from sprite_renderer import DemoSprites
 from weapon_data import WEAPONS
 
 from settings import MAX_DT, TARGET_FPS, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH, PHYSICS_STEP
@@ -71,12 +73,19 @@ class Game:
         self.boss = None
         self.boss_active = False
         self.victory = False
+        self.hero_animation = HeroAnimation()
+        self.visuals = None  # 테스트는 창 없이 구성 가능. 첫 draw에서만 로드.
+        self.show_hitboxes = False
+
+    def release_assets(self):
+        self.visuals = None
 
     def start_boss(self):
         if not self.at_boss_gate or self.boss_active or self.player.hp <= 0:
             return False
         hp, weapon = self.player.hp, self.player.weapon
         self.player = Player(*self.stage.arena_spawn, weapon=weapon)
+        self.hero_animation = HeroAnimation()
         self.player.hp = hp
         self.boss = Boss()
         self.boss_active = True
@@ -88,19 +97,24 @@ class Game:
 
     def restart(self):
         active = self.checkpoint.active
+        visuals, hitboxes = self.visuals, self.show_hitboxes
         self.__init__()
+        self.visuals, self.show_hitboxes = visuals, hitboxes
         if active:
             self.checkpoint.active = True
             self.player.x, self.player.y = self.checkpoint.spawn
         self.camera.follow(self.player)
 
     def update(self, dt):
+        if sdl2.SDLK_F2 in self.inputs.pressed:
+            self.show_hitboxes = not self.show_hitboxes
         if sdl2.SDLK_r in self.inputs.pressed:
             self.restart()
             return
         if self.player.hp <= 0 or self.victory:
             return
         self.elapsed += dt
+        previous_x = self.player.x
         direction = (int(sdl2.SDLK_RIGHT in self.inputs.held)
                      - int(sdl2.SDLK_LEFT in self.inputs.held))
         self.combat.begin_frame()
@@ -150,6 +164,7 @@ class Game:
                 break
             first = False
         self.camera.follow(self.player)
+        self.hero_animation.update(self.player, dt, previous_x)
         self.at_boss_gate = (self.player.hp > 0
                             and self.player.x + self.player.width >= self.stage.boss_entrance.left
                             and self.player.x <= self.stage.boss_entrance.right
@@ -159,6 +174,8 @@ class Game:
             self.start_boss()
 
     def draw(self):
+        if self.visuals is None:
+            self.visuals = DemoSprites()
         def draw_world(left, bottom, right, top, *color, **kwargs):
             p2d.draw_rectangle(*self.camera.screen_rect(left, bottom, right, top),
                               *color, **kwargs)
@@ -261,14 +278,13 @@ class Game:
                 draw_world(flame_x + 2, player.y + rise,
                                   flame_x + 6, player.y + 18 + rise,
                                   170, 250, 250, filled=True)
-        # 외형은 충돌 상자보다 좌우 6px, 위쪽 8px 크다.
-        draw_world(player.x - 6, player.y, player.x + player.width + 6,
-                          player.y + player.height + 8, *color, filled=True)
-        draw_world(player.x, player.y, player.x + player.width,
-                          player.y + player.height, 255, 215, 90)
-        eye_x = player.x + (player.width - 7 if player.facing > 0 else 7)
-        draw_world(eye_x - 2, player.y + 48, eye_x + 2,
-                          player.y + 53, 24, 28, 36, filled=True)
+        self.visuals.draw_hero(player, self.hero_animation, self.camera)
+        # 데모 포즈와 독립적인 기존 충돌/무적 상태를 확인할 수 있다.
+        draw_world(player.x, player.y - 3, player.x + player.width,
+                   player.y - 1, *color, filled=True)
+        if self.show_hitboxes:
+            draw_world(player.x, player.y, player.x + player.width,
+                       player.y + player.height, 255, 215, 90)
         if player.attack is not None:
             phase_color = {"STARTUP": (245, 220, 70), "ACTIVE": (255, 130, 50),
                            "RECOVERY": (140, 130, 180)}[player.attack.phase]
@@ -359,6 +375,8 @@ def run(frame_hook=None):
                 p2d.delay(remaining)
         return frames
     finally:
+        if 'game' in locals():
+            game.release_assets()
         p2d.close_canvas()
 
 
