@@ -208,17 +208,24 @@ class Player:
             speed = (self.dash_direction * DASH_SPEED if self.dash_remaining > 1e-9
                      else direction * MOVE_SPEED)
             world.move_x(self, speed * step)
-            old_vy = self.vy
-            self.vy = max(-MAX_FALL_SPEED, self.vy - GRAVITY * step)
-            landed, hit = world.move_y(self, (old_vy + self.vy) * 0.5 * step,
-                                      self.drop_platforms)
-            self.grounded = landed
-            if hit:
-                self.vy = 0.0
-            if landed:
-                self.jumps_used = 0
+            if self.dash_remaining > 1e-9:
+                # ?? ??? ??/?? ??? ??? ?? ?? ??? ????.
+                self.grounded = self.vy <= 0 and any(
+                    s not in self.drop_platforms and abs(self.y - s.top) < 1e-7
+                    and self.x < s.right and self.x + self.width > s.left
+                    for s in world.solids)
             else:
-                self.jumps_used = max(1, self.jumps_used)
+                old_vy = self.vy
+                self.vy = max(-MAX_FALL_SPEED, self.vy - GRAVITY * step)
+                landed, hit = world.move_y(self, (old_vy + self.vy) * 0.5 * step,
+                                          self.drop_platforms)
+                self.grounded = landed
+                if hit:
+                    self.vy = 0.0
+                if landed:
+                    self.jumps_used = 0
+                else:
+                    self.jumps_used = max(1, self.jumps_used)
             exposed = not self.invulnerable and any(
                 self.x < h.right and self.x + self.width > h.left
                 and self.y < h.top and self.y + self.height > h.bottom

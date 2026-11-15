@@ -6,6 +6,25 @@ from settings import DASH_SPEED, DASH_DURATION
 
 
 class DashTests(unittest.TestCase):
+    def test_horizontal_dash_freezes_height_and_gravity(self):
+        for fps in (20, 60, 144):
+            for vy in (-500, 400):
+                p = Player(y=500)
+                p.vy = vy
+                start_x = p.x
+                p.start_dash()
+                remaining = DASH_DURATION
+                while remaining > 1e-9:
+                    step = min(1 / fps, remaining)
+                    p.update(step, 0, False, World([]))
+                    remaining -= step
+                    self.assertEqual(p.y, 500)
+                    self.assertEqual(p.vy, vy)
+                self.assertAlmostEqual(p.x - start_x, DASH_SPEED * DASH_DURATION)
+                p.update(.01, 0, False, World([]))
+                self.assertLess(p.vy, vy)
+                self.assertNotEqual(p.y, 500)
+
     def setUp(self):
         self.p = Player(y=10000)
         self.world = World([])
