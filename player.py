@@ -174,8 +174,10 @@ class Player:
             self.jumps_used = 0
         else:
             self.jumps_used = max(1, self.jumps_used)
-        if direction and self.attack is None:
+        if direction:
             self.facing = 1 if direction > 0 else -1
+            if self.attack is not None:
+                self.attack.facing = self.facing
         if dash_pressed:
             self.start_dash()
         if switch_pressed:

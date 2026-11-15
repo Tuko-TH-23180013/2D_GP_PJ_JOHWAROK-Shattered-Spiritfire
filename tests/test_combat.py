@@ -85,7 +85,7 @@ class CombatTests(unittest.TestCase):
         p.update(0.02, -1, True, world)
         self.assertIs(p.attack, attack)
         self.assertFalse(attack.airborne)
-        self.assertEqual(p.facing, 1)
+        self.assertEqual(p.facing, -1)
         p = Player(350, 102)
         p.vy = -200
         p.request_attack()
@@ -101,6 +101,23 @@ class CombatTests(unittest.TestCase):
         p.request_attack()
         self.assertFalse(p.dash_invulnerable)
         self.assertGreater(p.dash_remaining, 0)
+
+    def test_turning_attack_moves_hitbox_without_resetting_hits(self):
+        p = self.player
+        p.grounded = True
+        p.request_attack()
+        attack = p.attack
+        for elapsed in (.02, .12, .22):
+            attack.elapsed = elapsed
+            attack.hit_targets.add(self.target)
+            p.update(.001, -1, False, World([]))
+            self.assertIs(p.attack, attack)
+            self.assertEqual(attack.facing, -1)
+            self.assertLessEqual(attack.bounds.right, p.x)
+            self.assertIn(self.target, attack.hit_targets)
+            p.update(.001, 1, False, World([]))
+            self.assertEqual(attack.facing, 1)
+            self.assertGreaterEqual(attack.bounds.left, p.x + p.width)
 
     def test_dash_blocked_until_recovery(self):
         p = self.player
