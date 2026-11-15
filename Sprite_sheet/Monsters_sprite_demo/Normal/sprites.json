@@ -1,0 +1,801 @@
+{
+  "project": "JOHWAROK",
+  "status": "prototype key poses",
+  "hero_reference_height_px": 85,
+  "timing": "art preview only",
+  "sheets": [
+    {
+      "id": "jangseung",
+      "name": "깨진 장승귀",
+      "pattern": "양팔 내려찍기",
+      "cue": "짧은 통나무 몸을 뒤로 젖힌 뒤 두 팔로 전방 근접 범위를 찍는다. 옆이나 뒤로 빠질 수 있다.",
+      "path": "jangseung/sprites/jangseung.png",
+      "category": "sprites",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 69,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 160
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 150
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 260
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 120
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 240
+        }
+      ],
+      "monster_id": "jangseung"
+    },
+    {
+      "id": "sotdae",
+      "name": "솟대새 원령",
+      "pattern": "급강하 찌르기",
+      "cue": "날개를 접으며 조준한 위치를 고정한다. 접은 날개의 부리로 대각선 돌입한 뒤 날개를 펴며 감속한다.",
+      "path": "sotdae/sprites/sotdae.png",
+      "category": "sprites",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 49,
+      "pivot_top_left": [
+        80,
+        80
+      ],
+      "pico2d_pivot": [
+        80,
+        80
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 160
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 150
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 310
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 200
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 290
+        }
+      ],
+      "monster_id": "sotdae"
+    },
+    {
+      "id": "ember",
+      "name": "잔불 도깨비",
+      "pattern": "청염탄 1발",
+      "cue": "탈 조각 주위 불꽃이 수축하며 밝아진다. 발사 순간 몸과 별개인 청염탄이 수평으로 날아간다.",
+      "path": "ember/sprites/ember.png",
+      "category": "sprites",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 40,
+      "pivot_top_left": [
+        80,
+        80
+      ],
+      "pico2d_pivot": [
+        80,
+        80
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 150
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 150
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 400
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 110
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 300
+        }
+      ],
+      "monster_id": "ember"
+    },
+    {
+      "id": "mask",
+      "name": "탈붙이",
+      "pattern": "도약 할퀴기",
+      "cue": "슬픈 탈 아래 네 다리를 접는다. 짧게 도약해 앞발로 긁고 착지하며 회수한다.",
+      "path": "mask/sprites/mask.png",
+      "category": "sprites",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 60,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 150
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 130
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 260
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 150
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 250
+        }
+      ],
+      "monster_id": "mask"
+    },
+    {
+      "id": "onggi",
+      "name": "장독귀",
+      "pattern": "뚜껑 예고 후 박치기",
+      "cue": "평범한 옹기처럼 위장한다. 눈이 비치고 뚜껑이 들썩이면 몸통이 짧게 뛰어든다.",
+      "path": "onggi/sprites/onggi.png",
+      "category": "sprites",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 58,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 200
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 210
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 350
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 160
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 360
+        }
+      ],
+      "monster_id": "onggi"
+    },
+    {
+      "id": "rice_chest",
+      "name": "뒤주귀",
+      "pattern": "쌀알·청염 분출",
+      "cue": "평평한 덮개를 들어 올린 뒤 전방 짧은 부채꼴로 쌀알과 청염을 뿜고 뚜껑을 닫는다.",
+      "path": "rice_chest/sprites/rice_chest.png",
+      "category": "sprites",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 70,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 180
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 180
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 440
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 180
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 380
+        }
+      ],
+      "monster_id": "rice_chest"
+    },
+    {
+      "id": "jige",
+      "name": "지게귀",
+      "pattern": "장작짐 돌진",
+      "cue": "장작짐을 뒤로 당긴 뒤 A자 기둥으로 빠르게 돌진한다. 앞쪽 기둥을 박으며 멈춘다.",
+      "path": "jige/sprites/jige.png",
+      "category": "sprites",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 88,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 170
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 180
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 430
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 220
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 420
+        }
+      ],
+      "monster_id": "jige"
+    },
+    {
+      "id": "jangseung_death",
+      "name": "깨진 장승귀",
+      "pattern": "목재 파편과 흙먼지",
+      "cue": "목각 몸통이 비틀리며 갈라지고 짧은 나무 파편이 바닥에 가라앉는다.",
+      "path": "jangseung/deaths/jangseung_death.png",
+      "category": "deaths",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 69,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 60
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 125
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 145
+        },
+        {
+          "index": 3,
+          "phase": "death_dust",
+          "duration_ms": 190
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 115
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 95
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "dust",
+      "playback": "once",
+      "duration_ms": 770,
+      "monster_id": "jangseung"
+    },
+    {
+      "id": "sotdae_death",
+      "name": "솟대새 원령",
+      "pattern": "부서진 날개와 혼불",
+      "cue": "나무 날개가 접혀 떨어지고 새의 몸에서 빠져나온 혼불이 위로 흩어진다.",
+      "path": "sotdae/deaths/sotdae_death.png",
+      "category": "deaths",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 49,
+      "pivot_top_left": [
+        80,
+        80
+      ],
+      "pico2d_pivot": [
+        80,
+        80
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 60
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 125
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 145
+        },
+        {
+          "index": 3,
+          "phase": "death_soul",
+          "duration_ms": 190
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 115
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 95
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "soul",
+      "playback": "once",
+      "duration_ms": 770,
+      "monster_id": "sotdae"
+    },
+    {
+      "id": "ember_death",
+      "name": "잔불 도깨비",
+      "pattern": "수축 후 혼불 소멸",
+      "cue": "목각 핵에 불꽃이 모였다가 핵이 갈라지며, 남은 혼불이 작아져 꺼진다.",
+      "path": "ember/deaths/ember_death.png",
+      "category": "deaths",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 40,
+      "pivot_top_left": [
+        80,
+        80
+      ],
+      "pico2d_pivot": [
+        80,
+        80
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 60
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 125
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 145
+        },
+        {
+          "index": 3,
+          "phase": "death_soul",
+          "duration_ms": 190
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 115
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 95
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "soul",
+      "playback": "once",
+      "duration_ms": 770,
+      "monster_id": "ember"
+    },
+    {
+      "id": "mask_death",
+      "name": "탈붙이",
+      "pattern": "떨어진 탈과 먹빛 먼지",
+      "cue": "앞다리가 먼저 접혀 탈이 땅에 부딪힌다. 탈 아래 몸이 먹빛 먼지로 풀린다.",
+      "path": "mask/deaths/mask_death.png",
+      "category": "deaths",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 60,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 60
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 125
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 145
+        },
+        {
+          "index": 3,
+          "phase": "death_dust",
+          "duration_ms": 190
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 115
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 95
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "ash",
+      "playback": "once",
+      "duration_ms": 770,
+      "monster_id": "mask"
+    },
+    {
+      "id": "onggi_death",
+      "name": "장독귀",
+      "pattern": "옹기 파편과 재",
+      "cue": "옹기가 한쪽으로 기울며 뚜껑이 튄다. 몸통이 깨지고 회갈색 먼지가 가라앉는다.",
+      "path": "onggi/deaths/onggi_death.png",
+      "category": "deaths",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 58,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 60
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 125
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 145
+        },
+        {
+          "index": 3,
+          "phase": "death_dust",
+          "duration_ms": 190
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 115
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 95
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "dust",
+      "playback": "once",
+      "duration_ms": 770,
+      "monster_id": "onggi"
+    },
+    {
+      "id": "rice_chest_death",
+      "name": "뒤주귀",
+      "pattern": "쌀알과 나무 먼지",
+      "cue": "덮개가 들리며 판재가 무너지고 쌀알 몇 알이 튄 뒤 낮은 먼지만 남는다.",
+      "path": "rice_chest/deaths/rice_chest_death.png",
+      "category": "deaths",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 70,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 60
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 125
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 145
+        },
+        {
+          "index": 3,
+          "phase": "death_dust",
+          "duration_ms": 190
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 115
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 95
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "dust",
+      "playback": "once",
+      "duration_ms": 770,
+      "monster_id": "rice_chest"
+    },
+    {
+      "id": "jige_death",
+      "name": "지게귀",
+      "pattern": "장작과 흙먼지",
+      "cue": "한쪽 지겟다리가 꺾이고 묶인 장작이 쏟아진다. 지게틀과 장작 주변에서 흙먼지가 가라앉는다.",
+      "path": "jige/deaths/jige_death.png",
+      "category": "deaths",
+      "frame_size": [
+        160,
+        160
+      ],
+      "reference_body_height_px": 88,
+      "pivot_top_left": [
+        80,
+        140
+      ],
+      "pico2d_pivot": [
+        80,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 60
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 125
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 145
+        },
+        {
+          "index": 3,
+          "phase": "death_dust",
+          "duration_ms": 190
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 115
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 95
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "dust",
+      "playback": "once",
+      "duration_ms": 770,
+      "monster_id": "jige"
+    }
+  ],
+  "death_playback": "Play once, then finish on transparent final frame. Durations are animation timings, without hitbox logic.",
+  "package": "normal"
+}

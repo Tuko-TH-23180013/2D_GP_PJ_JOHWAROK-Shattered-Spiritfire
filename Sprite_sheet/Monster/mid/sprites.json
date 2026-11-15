@@ -1,0 +1,240 @@
+{
+  "project": "JOHWAROK",
+  "status": "prototype key poses",
+  "hero_reference_height_px": 85,
+  "timing": "art preview only",
+  "sheets": [
+    {
+      "id": "hahoe_reactions",
+      "name": "하회탈 수호 무사 데모 보완 포즈",
+      "path": "hahoe/sprites/hahoe_reactions_demo.png",
+      "category": "reactions",
+      "monster_id": "hahoe",
+      "frame_size": [543, 724],
+      "reference_body_height_px": 358,
+      "pico2d_pivot": [271.5, 139],
+      "direction": "right",
+      "frames": [
+        {"index": 0, "phase": "hit", "duration_ms": 150},
+        {"index": 1, "phase": "down", "duration_ms": 650},
+        {"index": 2, "phase": "rise", "duration_ms": 350},
+        {"index": 3, "phase": "idle", "duration_ms": 170}
+      ]
+    },
+    {
+      "id": "hahoe",
+      "name": "하회탈 수호 무사",
+      "pattern": "환도 내려베기",
+      "cue": "웃는 탈이 옆으로 기울고 환도가 머리 위로 올라간다. 정면을 내려 벤 뒤 칼끝을 거둔다.",
+      "path": "hahoe/sprites/hahoe.png",
+      "category": "sprites",
+      "frame_size": [
+        240,
+        240
+      ],
+      "reference_body_height_px": 108,
+      "pivot_top_left": [
+        120,
+        220
+      ],
+      "pico2d_pivot": [
+        120,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 170
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 170
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 460
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 150
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 410
+        }
+      ],
+      "monster_id": "hahoe"
+    },
+    {
+      "id": "hahoe_thrust",
+      "name": "하회탈 수호 무사",
+      "pattern": "짧은 찌르기",
+      "cue": "앞발을 딛고 칼을 허리로 빼서 예고한다. 한 걸음만 전진해 찌르고 가드로 돌아간다.",
+      "path": "hahoe/sprites/hahoe_thrust.png",
+      "category": "sprites",
+      "frame_size": [
+        240,
+        240
+      ],
+      "reference_body_height_px": 108,
+      "pivot_top_left": [
+        120,
+        220
+      ],
+      "pico2d_pivot": [
+        120,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "idle",
+          "duration_ms": 170
+        },
+        {
+          "index": 1,
+          "phase": "move",
+          "duration_ms": 150
+        },
+        {
+          "index": 2,
+          "phase": "windup",
+          "duration_ms": 290
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 120
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 280
+        }
+      ],
+      "monster_id": "hahoe"
+    },
+    {
+      "id": "hahoe_retaliate",
+      "name": "하회탈 수호 무사",
+      "pattern": "후퇴 후 반격",
+      "cue": "확장 후보. 뒤로 짧게 물러난 뒤 오른쪽으로 복귀하며 횡베기를 한다. 후퇴와 베기의 판정은 분리한다.",
+      "path": "hahoe/expansions/hahoe_retaliate.png",
+      "category": "expansions",
+      "frame_size": [
+        240,
+        240
+      ],
+      "reference_body_height_px": 108,
+      "pivot_top_left": [
+        120,
+        220
+      ],
+      "pico2d_pivot": [
+        120,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "guard",
+          "duration_ms": 150
+        },
+        {
+          "index": 1,
+          "phase": "windup",
+          "duration_ms": 180
+        },
+        {
+          "index": 2,
+          "phase": "retreat",
+          "duration_ms": 300
+        },
+        {
+          "index": 3,
+          "phase": "active",
+          "duration_ms": 150
+        },
+        {
+          "index": 4,
+          "phase": "recovery",
+          "duration_ms": 340
+        }
+      ],
+      "monster_id": "hahoe"
+    },
+    {
+      "id": "hahoe_death",
+      "name": "하회탈 수호 무사",
+      "pattern": "바닥에 떨어진 탈과 혼불",
+      "cue": "환도를 짚고 무릎을 꿇는다. 남은 하회탈 위로 청록 혼불이 올라와 흩어진다.",
+      "path": "hahoe/deaths/hahoe_death.png",
+      "category": "deaths",
+      "frame_size": [
+        240,
+        240
+      ],
+      "reference_body_height_px": 108,
+      "pivot_top_left": [
+        120,
+        220
+      ],
+      "pico2d_pivot": [
+        120,
+        20
+      ],
+      "direction": "right",
+      "frames": [
+        {
+          "index": 0,
+          "phase": "death_start",
+          "duration_ms": 70
+        },
+        {
+          "index": 1,
+          "phase": "death_recoil",
+          "duration_ms": 160
+        },
+        {
+          "index": 2,
+          "phase": "death_break",
+          "duration_ms": 205
+        },
+        {
+          "index": 3,
+          "phase": "death_soul",
+          "duration_ms": 235
+        },
+        {
+          "index": 4,
+          "phase": "death_fade",
+          "duration_ms": 150
+        },
+        {
+          "index": 5,
+          "phase": "death_last",
+          "duration_ms": 120
+        },
+        {
+          "index": 6,
+          "phase": "death_clear",
+          "duration_ms": 40
+        }
+      ],
+      "effect": "soul",
+      "playback": "once",
+      "duration_ms": 980,
+      "monster_id": "hahoe"
+    }
+  ],
+  "death_playback": "Play once, then finish on transparent final frame. Durations are animation timings, without hitbox logic.",
+  "package": "hahoe"
+}
