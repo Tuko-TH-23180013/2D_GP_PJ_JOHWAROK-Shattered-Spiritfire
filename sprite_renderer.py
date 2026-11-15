@@ -33,10 +33,20 @@ class DemoSprites:
         anchor_y = monster.y + (monster.height / 2 if getattr(monster, 'flying', False) else 0)
         x = monster.x + monster.width / 2 - camera.x + (cw / 2 - pivot_x) * scale
         y = anchor_y + (ch / 2 - py) * scale
+        hurt = getattr(monster, 'hitstun_remaining', 0)
+        angle = 0
+        if hurt > 0:
+            from math import sin
+            from monsters import NORMAL_HITSTUN
+            age = NORMAL_HITSTUN - hurt
+            # 데모 회수 포즈에 짧은 반동/떨림을 더한다. 실제 충돌 위치는 유지한다.
+            recoil = max(0, 1 - age / .20)
+            x -= facing * 8 * recoil
+            angle = facing * (.10 + .04 * sin(age * 55)) * min(1, hurt / .1)
         tint = (255, 140, 140) if monster.hit_flash > 0 else (255, 255, 255)
         sdl2.SDL_SetTextureColorMod(image.texture, *tint)
         try:
-            image.clip_composite_draw(frame * cw, 0, cw, ch, 0,
+            image.clip_composite_draw(frame * cw, 0, cw, ch, angle,
                                       'h' if facing < 0 else '', x, y, cw * scale, ch * scale)
         finally:
             sdl2.SDL_SetTextureColorMod(image.texture, 255, 255, 255)

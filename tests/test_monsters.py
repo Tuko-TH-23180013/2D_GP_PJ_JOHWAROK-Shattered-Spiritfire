@@ -1,12 +1,48 @@
 import unittest
 from attack import Attack
 from combat_system import CombatSystem
-from monsters import Monster, SPECS, Spiritfire
+from monsters import Monster, SPECS, Spiritfire, NORMAL_HITSTUN
 from player import Player
 from world import World, Rect
 
 
 class MonsterTests(unittest.TestCase):
+    def test_each_normal_hit_cancels_and_refreshes_hitstun(self):
+        from monster_sprites import pose
+        for kind in SPECS:
+            enemy = Monster(kind, 500)
+            enemy.attack = Attack(enemy, enemy.spec.attack)
+            enemy.on_combat_hit()
+            self.assertIsNone(enemy.attack)
+            self.assertEqual(enemy.state, 'HURT')
+            self.assertEqual(pose(enemy)[1], 4)
+            self.advance(enemy, .5)
+            self.assertIsNone(enemy.attack)
+            enemy.on_combat_hit()
+            self.assertEqual(enemy.hitstun_remaining, NORMAL_HITSTUN)
+            self.advance(enemy, .5)
+            self.assertEqual(enemy.state, 'HURT')
+            self.advance(enemy, .4)
+            self.assertIsNotNone(enemy.attack)
+
+    def test_real_combo_hits_keep_normal_attack_cancelled(self):
+        from weapon_data import WEAPONS
+        for weapon in ('basic', 'giant'):
+            enemy = Monster('jangseung', 500)
+            enemy.hp = 1000
+            self.player.x = 460
+            self.player.facing = 1
+            combat = CombatSystem()
+            for data in WEAPONS[weapon].combo:
+                attack = Attack(self.player, data)
+                attack.elapsed = data.startup
+                combat.begin_frame()
+                combat.resolve([attack], [enemy])
+                self.assertEqual(enemy.hitstun_remaining, NORMAL_HITSTUN)
+                # 다음 준비 동작까지 맞고 있는 동안 반격이 나오지 않는다.
+                self.advance(enemy, .74 if weapon == 'giant' else .40)
+                self.assertIsNone(enemy.attack)
+
     def setUp(self):
         self.world = World([Rect(0, 0, 1600, 100), Rect(1600, 0, 1640, 720)])
         self.player = Player(580, 100)

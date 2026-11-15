@@ -40,6 +40,8 @@ def pose(monster):
     if kind == 'hahoe' and monster.state in ('DOWN', 'WAKE'):
         return 'hahoe_reactions', 1 if monster.state == 'DOWN' else 2
     sheet = monster.sheet
+    if getattr(monster, 'hitstun_remaining', 0) > 0:
+        return sheet, next((f['index'] for f in CATALOG[sheet]['frames'] if f['phase'] == 'recovery'), 0)
     phase = monster.attack.phase if monster.attack else monster.state
     names = {'STARTUP': 'windup', 'ACTIVE': 'active', 'RECOVERY': 'recovery',
              'CHASE': 'move', 'APPROACH': 'move'}

@@ -10,7 +10,7 @@ from pico2d import pico2d as p2d
 from main import MapGame
 from monster_sprites import CATALOG
 from attack import Attack
-from demo_bosses import SWING
+from demo_bosses import SWING, SLASH, RUSH
 
 
 def capture(name):
@@ -36,10 +36,25 @@ def main():
             game.enter_room(i)
             game.player.x = 450
             game.update(.02)
+            for actor in game.enemies + ([game.boss] if game.boss else []):
+                data = actor.spec.attack if hasattr(actor, 'spec') else SLASH if i == 2 else RUSH
+                actor.attack = Attack(actor, data)
+                actor.attack.elapsed = data.startup * .65
+                actor.state = 'STARTUP'
+                if i == 6:
+                    actor.pattern, actor.sheet = 'RUSH', 'guardian'
+                if getattr(actor, 'kind', '') == 'sotdae':
+                    actor.dive_velocity = (-400, -150)
             game.draw()
             capture(f'johwarok-map-{i + 1}.png')
             present()
             p2d.get_events()
+        game.enter_room(0)
+        game.player.x = 450
+        game.enemies[0].on_combat_hit()
+        game.draw()
+        capture('johwarok-normal-hitstun.png')
+        present()
         # 모든 PNG가 SDL에서 실제 로드/클립/좌우 반전되는지 검사.
         for sheet_id, sheet in CATALOG.items():
             image = p2d.load_image(str(sheet['file']))

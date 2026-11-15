@@ -9,6 +9,9 @@ from monster_sprites import duration
 from settings import GRAVITY, MAX_FALL_SPEED
 from world import Rect
 
+# 거대 방망이 1타→2타(최대 약 0.74초 간격)도 이어지는 임시 경직 시간.
+NORMAL_HITSTUN = .80
+
 
 @dataclass(frozen=True)
 class MonsterSpec:
@@ -85,11 +88,18 @@ class Monster(DemoLife, Enemy):
         self.home_y = y
         self.triggered = False
         self.dive_velocity = (0, 0)
+        self.hitstun_remaining = 0.0
 
     def on_combat_hit(self):
         super().on_combat_hit()
         if self.hp <= 0:
             self.projectiles.clear()
+            self.hitstun_remaining = 0.0
+        else:
+            self.hitstun_remaining = NORMAL_HITSTUN
+            self.state, self.attack = 'HURT', None
+            self.projectiles.clear()  # 아직 게임으로 전달하지 않은 발사는 취소한다.
+            self.vy = min(0, self.vy)
 
     def supported_ahead(self, world, distance):
         edge = self.x + (self.width + distance if distance >= 0 else distance)
@@ -120,6 +130,10 @@ class Monster(DemoLife, Enemy):
             if hit:
                 self.vy = 0
         self.cooldown = max(0, self.cooldown - dt)
+        if self.hitstun_remaining > 0:
+            self.hitstun_remaining = max(0, self.hitstun_remaining - dt)
+            self.state, self.attack = 'HURT', None
+            return
         if self.stagger_remaining > 0:
             self.state, self.attack = 'STAGGER', None
             return
