@@ -106,50 +106,7 @@ class DemoSprites:
         sdl2.SDL_SetTextureColorMod(self.dummy.texture, 255, 255, 255)
 
     def draw_labels(self, game):
-        from pico2d import pico2d as p2d
-        pale = (210, 230, 235)
         self.hud.draw(game)
-        if hasattr(game, 'room_index'):
-            self.draw_route_labels(game)
-            return
-        if game.victory:
-            self.font.draw(485, 375, "VICTORY - Old Dokkaebi defeated", (130, 250, 190))
-            self.font.draw(515, 335, "R: retry   Esc: quit", pale)
-        elif game.player.hp <= 0:
-            self.font.draw(480, 405, "YOU DIED - R to restart", (255, 180, 180))
-        elif game.checkpoint.can_activate(game.player):
-            self.font.draw(420, 565, "Checkpoint active" if game.checkpoint.active else "UP: activate checkpoint", pale)
-        elif game.at_boss_gate and not game.boss_active:
-            self.font.draw(420, 565, "UP: challenge Old Dokkaebi", pale)
-    def draw_route_labels(self, game):
-        from pico2d import pico2d as p2d
-        pale = (210, 230, 235)
-        self.font.draw(24, 710, f'MAP {game.room_index + 1}/7 - {game.stage.name}', pale)
-        labels = ('N1', 'N2', 'MID', 'SAVE', 'N3', 'N4', 'BOSS')
-        for i, label in enumerate(labels):
-            x = 365 + i * 116
-            if i < 6:
-                p2d.draw_rectangle(x + 74, 571, x + 116, 573, 95, 125, 145, filled=True)
-            color = ((75, 165, 185) if i == game.room_index else
-                     (45, 105, 65) if i in game.cleared_rooms else (45, 50, 65))
-            p2d.draw_rectangle(x, 554, x + 74, 590, *color, filled=True)
-            self.font.draw(x + 10, 572, label, pale)
-        if game.victory:
-            self.font.draw(465, 375, 'VICTORY - Guardian defeated!', (130, 250, 190))
-            self.font.draw(480, 335, 'R: restart from save point', pale)
-        elif game.player.hp <= 0:
-            self.font.draw(480, 405, 'YOU DIED - R to restart', (255, 180, 180))
-        elif game.stage.category == 'save':
-            self.font.draw(380, 520, 'SAVE ACTIVE (this session)' if game.checkpoint.active
-                           else 'UP at blue shrine: set respawn point', (120, 245, 210))
-        elif not game.room_clear:
-            remaining = sum(e.hp > 0 for e in game.enemies) + int(game.boss is not None and game.boss.hp > 0)
-            self.font.draw(425, 520, f'Defeat all enemies to open exit: {remaining}', pale)
-        if game.room_clear and not game.victory and game.player.hp > 0:
-            self.font.draw(440, 488, 'Map clear - UP at the right gate', (140, 250, 190))
-        gate = game.stage.boss_entrance
-        self.font.draw(gate.left - game.camera.x - 15, gate.top + 25,
-                       'UP: NEXT' if game.room_clear else 'LOCKED', pale)
 
     def draw_hero(self, player, animation, camera):
         import sdl2

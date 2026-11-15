@@ -79,3 +79,30 @@ class HUDTests(unittest.TestCase):
             game.boss.hp = 0
             hud.draw_boss(game)
             hud.asset.assert_not_called()
+
+    def test_location_and_save_notice_follow_current_room(self):
+        from unittest.mock import Mock, patch
+        from Ui.HUD.renderer import HUD
+        from main import MapGame
+        hud = HUD.__new__(HUD)
+        hud.asset, hud.text, hud.small = Mock(), Mock(), Mock()
+        game = MapGame()
+        with patch('Ui.HUD.renderer.p2d.draw_rectangle'):
+            hud.draw_location(game)
+            self.assertTrue(any('마을 진입로' in call.args for call in hud.text.call_args_list))
+            game.enter_room(3)
+            game.checkpoint.active = True
+            before = vars(game).copy()
+            hud.text.reset_mock()
+            hud.draw_location(game)
+            self.assertTrue(any('세이브 활성 · R 복귀' in call.args for call in hud.text.call_args_list))
+            self.assertEqual(vars(game), before)
+
+    def test_text_uses_english_when_korean_font_unavailable(self):
+        from unittest.mock import Mock
+        from Ui.HUD.renderer import HUD
+        hud = HUD.__new__(HUD)
+        hud.font = Mock()
+        hud.korean = False
+        hud.text(10, 20, '장승마을', 'Jangseung village')
+        self.assertEqual(hud.font.draw.call_args.args[2], 'Jangseung village')

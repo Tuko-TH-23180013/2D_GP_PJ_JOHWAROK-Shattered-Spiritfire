@@ -9,6 +9,7 @@ from sdl2.sdlttf import TTF_SizeUTF8
 
 from sprite_animation import ASSET_ROOT
 from .model import ASSETS, ratio, dash_levels, boss_visible
+from .location import ROOM_NAMES
 
 PALE = (243, 228, 207)
 GOLD = (181, 144, 92)
@@ -98,12 +99,61 @@ class HUD:
         state = {'DOWN': ('다운', 'DOWN'), 'WAKE': ('기상', 'WAKE')}.get(boss.state, ('스태거', 'STAGGER'))
         self.text(640, 613, state[0], state[1], font=self.small, centered=True, color=GOLD)
 
+    def draw_location(self, game):
+        index = getattr(game, 'room_index', None)
+        # 동봉 빈 재화 패널의 장식 테두리를 지역 표시에 재사용한다.
+        self.asset('currency_panel', 1145, 674, 236, 76)
+        self.text(1145, 692, '장승마을' + (f' · {index + 1}/7' if index is not None else ''),
+                  'Jangseung village' + (f' · {index + 1}/7' if index is not None else ''),
+                  centered=True, color=GOLD)
+        name = ROOM_NAMES[index] if index is not None else '장승마을'
+        self.text(1145, 664, name, game.stage.region_at(game.player.x), centered=True, font=self.small)
+        if index is None:
+            return
+        labels = ('1', '2', '중', '쉼', '3', '4', '보')
+        english = ('1', '2', 'M', 'S', '3', '4', 'B')
+        for i in range(7):
+            x = 1049 + i * 32
+            color = CYAN if i == index else GOLD if i in game.cleared_rooms else (75, 77, 90)
+            p2d.draw_rectangle(x - 12, 602, x + 12, 626, *color)
+            self.text(x, 614, labels[i], english[i], centered=True, font=self.small, color=color)
+        if game.stage.category == 'save':
+            ko, en = (('세이브 활성 · R 복귀', 'Save active / R respawn') if game.checkpoint.active
+                      else ('장승 앞에서 ↑ 저장', 'UP at shrine to save'))
+        elif game.room_clear:
+            ko, en = ('전투 완료', 'Battle complete') if game.victory else ('출구 열림 · ↑ 이동', 'Exit open / UP to enter')
+        else:
+            alive = sum(e.hp > 0 for e in game.enemies) + int(game.boss is not None and game.boss.hp > 0)
+            ko, en = f'남은 적 {alive} · 출구 잠김', f'Enemies {alive} / Exit locked'
+        self.text(1145, 581, ko, en, centered=True, font=self.small, color=GOLD)
+
+    def draw_notifications(self, game):
+        if game.victory:
+            self.text(640, 380, '수호신 격파', 'VICTORY', centered=True, font=self.title, color=CYAN)
+            self.text(640, 335, 'R 다시 도전 · Esc 종료', 'R retry / Esc quit', centered=True)
+        elif game.player.hp <= 0:
+            self.text(640, 405, '혼불이 꺼졌습니다', 'YOU DIED', centered=True, color=(255, 170, 180))
+            self.text(640, 316, 'R 체크포인트에서 재시작', 'R restart from checkpoint', centered=True, font=self.small)
+        elif hasattr(game, 'room_index'):
+            gate = game.stage.boss_entrance
+            x = max(70, min(1210, (gate.left + gate.right) / 2 - game.camera.x))
+            if gate.right >= game.camera.x and gate.left <= game.camera.x + 1280:
+                self.text(x, gate.top + 24, '↑ 다음 맵' if game.room_clear else '잠김',
+                          'UP: next map' if game.room_clear else 'Locked', centered=True, color=GOLD)
+        elif game.checkpoint.can_activate(game.player):
+            self.text(640, 565, '체크포인트 활성' if game.checkpoint.active else '↑ 체크포인트 활성화',
+                      'Checkpoint active' if game.checkpoint.active else 'UP: activate checkpoint', centered=True)
+        elif game.at_boss_gate and not game.boss_active:
+            self.text(640, 565, '↑ 보스 도전', 'UP: challenge boss', centered=True)
+
     def draw(self, game):
         p2d.draw_rectangle(0, 0, 1279, 99, 13, 15, 26, filled=True)
         p2d.draw_rectangle(0, 98, 1279, 99, 87, 73, 66, filled=True)
         self.draw_player(game.player)
         self.draw_abilities()
         self.draw_boss(game)
+        self.draw_location(game)
+        self.draw_notifications(game)
         self.text(775, 71, '방향키 이동  C 점프  ↓+C 하강', 'Arrows move / C jump / Down+C drop', font=self.small)
         self.text(775, 50, 'X 공격  Z 대시  Space 무기 전환', 'X attack / Z dash / Space switch', font=self.small)
         self.text(775, 29, '↑ 상호작용  R 재시작  F2 판정  Esc 종료',
