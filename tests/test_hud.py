@@ -35,3 +35,25 @@ class HUDTests(unittest.TestCase):
         self.assertTrue(boss_visible(game))
         game.boss.hp = 0
         self.assertFalse(boss_visible(game))
+
+    def test_player_render_reads_real_state_without_mutation(self):
+        from unittest.mock import Mock
+        from Ui.HUD.renderer import HUD
+        hud = HUD.__new__(HUD)
+        hud.asset = Mock()
+        hud.text = Mock()
+        hud.meter = Mock()
+        hud.small = Mock()
+        hud.images = {'dash_ready': Mock(w=36, h=45)}
+        p = Player()
+        p.hp = 37
+        p.weapon = 'giant'
+        p.switch_queued = True
+        p.dash_charges = 1
+        p.recharge_remaining = DASH_RECHARGE / 2
+        before = vars(p).copy()
+        hud.draw_player(p)
+        self.assertEqual(vars(p), before)
+        hud.asset.assert_any_call('slot_active', 203, 76, 42, 42)
+        hud.asset.assert_any_call('slot_inactive', 141, 76, 42, 42)
+        hud.meter.assert_called_once_with('meter_hp', 120, 40, 268, 9, .37)

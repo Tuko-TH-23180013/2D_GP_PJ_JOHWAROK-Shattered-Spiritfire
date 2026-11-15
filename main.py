@@ -203,10 +203,6 @@ class Game:
         if self.checkpoint.can_activate(player) and not self.checkpoint.active:
             draw_world(cx - 4, cy + 125, cx + 4, cy + 150, 240, 240, 170, filled=True)
             draw_world(cx - 12, cy + 138, cx + 12, cy + 145, 240, 240, 170, filled=True)
-        p2d.draw_rectangle(25, 635, 225, 653, 70, 40, 45, filled=True)
-        if player.hp > 0:
-            p2d.draw_rectangle(25, 635, 25 + 200 * player.hp / player.max_hp,
-                              653, 230, 80, 100, filled=True)
         visible_enemies = self.enemies + ([self.boss] if self.boss_active and
                          (self.boss.hp > 0 or (hasattr(self.boss, 'death_done') and not self.boss.death_done)) else [])
         for enemy in visible_enemies:
@@ -250,9 +246,6 @@ class Game:
                        55, 185, 235, filled=True)
             draw_world(shot.x + 5, shot.y + 5, shot.x + shot.width - 5, shot.y + shot.height - 5,
                        195, 255, 255, filled=True)
-        weapon_color = (110, 190, 250) if player.weapon == "basic" else (215, 145, 65)
-        p2d.draw_rectangle(130, 675, 155 if player.weapon == "basic" else 180,
-                          695, *weapon_color, filled=True)
         dummy = self.dummy
         self.visuals.draw_dummy(dummy, self.camera)
         draw_world(dummy.x - 10, 205, dummy.x + 70, 213, 70, 40, 40, filled=True)
@@ -270,10 +263,6 @@ class Game:
         for hazard in self.world.hazards:
             draw_world(hazard.left, hazard.bottom, hazard.right, hazard.top,
                               180, 55, 65, filled=True)
-        for index in range(2):
-            color = (80, 220, 240) if index < player.dash_charges else (65, 70, 80)
-            p2d.draw_rectangle(25 + index * 45, 675, 60 + index * 45, 695,
-                              *color, filled=True)
         color = (90, 160, 240) if player.grounded else (100, 230, 160)
         if player.hit_flash > 0:
             color = (255, 85, 95)

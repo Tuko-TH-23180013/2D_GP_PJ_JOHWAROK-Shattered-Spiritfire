@@ -10,6 +10,8 @@ class DemoSprites:
         self.dummy = p2d.load_image(str(ASSET_ROOT / "dummy.png"))
         self.font = p2d.load_font(str(ASSET_ROOT / "font.ttf"), 18)
         self.monster_images = {}
+        from Ui.HUD.renderer import HUD
+        self.hud = HUD()
         if (self.hero.w, self.hero.h) != (800, 800):
             raise ValueError("데모 hero.png는 800×800 시트여야 합니다.")
 
@@ -106,15 +108,10 @@ class DemoSprites:
     def draw_labels(self, game):
         from pico2d import pico2d as p2d
         pale = (210, 230, 235)
-        self.font.draw(24, 710, "JOHWAROK / DEMO SPRITES", pale)
-        self.font.draw(24, 615, f"HP {game.player.hp}/{game.player.max_hp}", pale)
-        self.font.draw(24, 590, f"Weapon: {game.player.weapon.upper()}  Dash: {game.player.dash_charges}/2", pale)
-        p2d.draw_rectangle(14, 10, 1265, 78, 16, 30, 43, filled=True)
-        self.font.draw(28, 54, "Arrows: move   C: double jump   Down+C: drop   X: attack   Z: dash   Space: switch", pale)
+        self.hud.draw(game)
         if hasattr(game, 'room_index'):
             self.draw_route_labels(game)
             return
-        self.font.draw(28, 27, "Up: checkpoint / boss gate   R: restart   F2: collision box   Esc: quit", pale)
         if game.victory:
             self.font.draw(485, 375, "VICTORY - Old Dokkaebi defeated", (130, 250, 190))
             self.font.draw(515, 335, "R: retry   Esc: quit", pale)
@@ -130,7 +127,6 @@ class DemoSprites:
     def draw_route_labels(self, game):
         from pico2d import pico2d as p2d
         pale = (210, 230, 235)
-        self.font.draw(28, 27, 'Up: next map / save point   R: restart   F2: collision boxes   Esc: quit', pale)
         self.font.draw(350, 710, f'MAP {game.room_index + 1}/7 - {game.stage.name}', pale)
         labels = ('N1', 'N2', 'MID', 'SAVE', 'N3', 'N4', 'BOSS')
         for i, label in enumerate(labels):
