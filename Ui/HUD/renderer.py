@@ -8,7 +8,7 @@ import sdl2
 from sdl2.sdlttf import TTF_SizeUTF8
 
 from sprite_animation import ASSET_ROOT
-from .model import ASSETS, ratio, dash_levels
+from .model import ASSETS, ratio, dash_levels, boss_visible
 
 PALE = (243, 228, 207)
 GOLD = (181, 144, 92)
@@ -81,11 +81,29 @@ class HUD:
             self.text(x, 82, key, centered=True, font=self.small)
         self.text(624, 16, '능력 잠김', 'Abilities locked', centered=True, font=self.small, color=GOLD)
 
+    def draw_boss(self, game):
+        if not boss_visible(game):
+            return
+        boss = game.boss
+        names = {'hahoe': ('하회탈 수호 무사', 'Hahoe guardian'),
+                 'guardian': ('타락한 도깨비 수호신', 'Corrupted guardian')}
+        ko, en = names.get(getattr(boss, 'kind', ''), ('오래된 도깨비', 'Old Dokkaebi'))
+        self.asset('boss_panel', 640, 658, 650, 83)
+        self.text(640, 704, ko, en, font=self.title, centered=True)
+        self.meter('meter_boss', 346, 663, 586, 10, ratio(boss.hp, boss.max_hp))
+        self.asset('boss_health_frame', 639, 661, 602, 23)
+        self.text(640, 662, f'{boss.hp} / {boss.max_hp}', font=self.small, centered=True)
+        self.meter('meter_stagger', 397, 632, 484, 5, ratio(boss.stagger, boss.stagger_limit or 0))
+        self.asset('boss_stagger_frame', 639, 632, 500, 16)
+        state = {'DOWN': ('다운', 'DOWN'), 'WAKE': ('기상', 'WAKE')}.get(boss.state, ('스태거', 'STAGGER'))
+        self.text(640, 613, state[0], state[1], font=self.small, centered=True, color=GOLD)
+
     def draw(self, game):
         p2d.draw_rectangle(0, 0, 1279, 99, 13, 15, 26, filled=True)
         p2d.draw_rectangle(0, 98, 1279, 99, 87, 73, 66, filled=True)
         self.draw_player(game.player)
         self.draw_abilities()
+        self.draw_boss(game)
         self.text(775, 71, '방향키 이동  C 점프  ↓+C 하강', 'Arrows move / C jump / Down+C drop', font=self.small)
         self.text(775, 50, 'X 공격  Z 대시  Space 무기 전환', 'X attack / Z dash / Space switch', font=self.small)
         self.text(775, 29, '↑ 상호작용  R 재시작  F2 판정  Esc 종료',

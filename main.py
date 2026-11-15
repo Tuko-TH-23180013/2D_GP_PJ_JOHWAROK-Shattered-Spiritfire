@@ -296,14 +296,6 @@ class Game:
             draw_world(player.x, player.y + player.height + 14,
                               player.x + player.width, player.y + player.height + 20,
                               *phase_color, filled=True)
-        if self.boss_active:
-            p2d.draw_rectangle(350, 665, 1000, 690, 70, 35, 45, filled=True)
-            if self.boss.hp > 0:
-                p2d.draw_rectangle(350, 665, 350 + 650 * self.boss.hp / self.boss.max_hp,
-                                  690, 210, 55, 85, filled=True)
-            if self.boss.stagger > 0:
-                p2d.draw_rectangle(350, 650, 350 + 650 * self.boss.stagger / self.boss.stagger_limit,
-                                  657, 140, 100, 240, filled=True)
         if self.victory:
             p2d.draw_rectangle(410, 290, 870, 430, 20, 65, 50, filled=True)
             p2d.draw_rectangle(410, 290, 870, 430, 100, 245, 180)

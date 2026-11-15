@@ -57,3 +57,25 @@ class HUDTests(unittest.TestCase):
         hud.asset.assert_any_call('slot_active', 203, 76, 42, 42)
         hud.asset.assert_any_call('slot_inactive', 141, 76, 42, 42)
         hud.meter.assert_called_once_with('meter_hp', 120, 40, 268, 9, .37)
+
+    def test_boss_render_reads_hp_stagger_and_hides_on_death(self):
+        from unittest.mock import Mock
+        from Ui.HUD.renderer import HUD
+        from main import MapGame
+        hud = HUD.__new__(HUD)
+        hud.asset, hud.text, hud.meter = Mock(), Mock(), Mock()
+        hud.small, hud.title = Mock(), Mock()
+        game = MapGame()
+        for index in (2, 6):
+            game.enter_room(index)
+            game.boss.hp = game.boss.max_hp / 2
+            game.boss.stagger = game.boss.stagger_limit / 4
+            before = vars(game.boss).copy()
+            hud.draw_boss(game)
+            self.assertEqual(vars(game.boss), before)
+            hud.meter.assert_any_call('meter_boss', 346, 663, 586, 10, .5)
+            hud.meter.assert_any_call('meter_stagger', 397, 632, 484, 5, .25)
+            hud.asset.reset_mock()
+            game.boss.hp = 0
+            hud.draw_boss(game)
+            hud.asset.assert_not_called()

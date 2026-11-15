@@ -121,13 +121,10 @@ class DemoSprites:
             self.font.draw(420, 565, "Checkpoint active" if game.checkpoint.active else "UP: activate checkpoint", pale)
         elif game.at_boss_gate and not game.boss_active:
             self.font.draw(420, 565, "UP: challenge Old Dokkaebi", pale)
-        if game.boss_active and not game.victory:
-            self.font.draw(350, 625, f"Old Dokkaebi: {game.boss.pattern} / {game.boss.state}", pale)
-
     def draw_route_labels(self, game):
         from pico2d import pico2d as p2d
         pale = (210, 230, 235)
-        self.font.draw(350, 710, f'MAP {game.room_index + 1}/7 - {game.stage.name}', pale)
+        self.font.draw(24, 710, f'MAP {game.room_index + 1}/7 - {game.stage.name}', pale)
         labels = ('N1', 'N2', 'MID', 'SAVE', 'N3', 'N4', 'BOSS')
         for i, label in enumerate(labels):
             x = 365 + i * 116
@@ -137,9 +134,6 @@ class DemoSprites:
                      (45, 105, 65) if i in game.cleared_rooms else (45, 50, 65))
             p2d.draw_rectangle(x, 554, x + 74, 590, *color, filled=True)
             self.font.draw(x + 10, 572, label, pale)
-        if game.boss_active:
-            name = 'Hahoe guardian' if game.stage.category == 'mid' else 'Corrupted guardian'
-            self.font.draw(350, 625, f'{name}: {game.boss.pattern} / {game.boss.state}', pale)
         if game.victory:
             self.font.draw(465, 375, 'VICTORY - Guardian defeated!', (130, 250, 190))
             self.font.draw(480, 335, 'R: restart from save point', pale)
