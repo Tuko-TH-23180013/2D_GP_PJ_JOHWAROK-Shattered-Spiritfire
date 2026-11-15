@@ -92,6 +92,16 @@ class MonsterTests(unittest.TestCase):
         self.assertEqual(enemy.dive_velocity, velocity)
         self.assertGreater(enemy.x, 500)
 
+    def test_mask_landing_ends_attack_window(self):
+        enemy = Monster('mask', 500, 101)
+        enemy.attack = Attack(enemy, enemy.spec.attack)
+        enemy.attack.elapsed = enemy.spec.attack.startup + .2
+        enemy.triggered = True
+        enemy.vy = -300
+        enemy.update(.02, self.player, self.world)
+        self.assertEqual(enemy.y, 100)
+        self.assertEqual(enemy.attack.phase, 'RECOVERY')
+
     def test_rice_burst_one_hit_per_attack(self):
         enemy = Monster('rice_chest', 500)
         enemy.facing = 1

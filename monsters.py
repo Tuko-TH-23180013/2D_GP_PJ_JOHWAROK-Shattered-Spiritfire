@@ -134,7 +134,7 @@ class Monster(DemoLife, Enemy):
                         self.vy = 350
                         landed = False
                 if self.kind == 'sotdae':
-                    old_x, old_y = self.x, self.y
+                    old_x = self.x
                     vx, vy = self.dive_velocity
                     world.move_x(self, vx * dt)
                     _, hit = world.move_y(self, vy * dt)

@@ -207,8 +207,13 @@ class Game:
         if player.hp > 0:
             p2d.draw_rectangle(25, 635, 25 + 200 * player.hp / player.max_hp,
                               653, 230, 80, 100, filled=True)
-        visible_enemies = self.enemies + ([self.boss] if self.boss_active and self.boss.hp > 0 else [])
+        visible_enemies = self.enemies + ([self.boss] if self.boss_active and
+                         (self.boss.hp > 0 or (hasattr(self.boss, 'death_done') and not self.boss.death_done)) else [])
         for enemy in visible_enemies:
+            if hasattr(enemy, 'kind'):
+                self.visuals.draw_monster(enemy, self.camera)
+                if enemy.hp <= 0:
+                    continue
             color = {"STARTUP": (240, 210, 65), "ACTIVE": (245, 75, 60),
                      "RECOVERY": (125, 90, 105), "STAGGER": (190, 90, 235)}.get(
                          enemy.state, (190, 90, 70))
@@ -219,8 +224,15 @@ class Game:
                     color = (100, 100, 210) if enemy.state == "DOWN" else (150, 130, 210)
                 elif enemy.state == "STARTUP":
                     color = (240, 200, 65) if enemy.pattern == "SWING" else (230, 100, 220)
-            draw_world(enemy.x, enemy.y, enemy.x + enemy.width,
-                              enemy.y + enemy.height, *color, filled=True)
+            if not hasattr(enemy, 'kind'):
+                draw_world(enemy.x, enemy.y, enemy.x + enemy.width,
+                           enemy.y + enemy.height, *color, filled=True)
+            else:
+                draw_world(enemy.x, enemy.y - 4, enemy.x + enemy.width,
+                           enemy.y - 1, *color, filled=True)
+                if self.show_hitboxes:
+                    draw_world(enemy.x, enemy.y, enemy.x + enemy.width,
+                               enemy.y + enemy.height, 255, 215, 90)
             draw_world(enemy.x, enemy.y + enemy.height + 9,
                               enemy.x + enemy.width * enemy.hp / enemy.max_hp,
                               enemy.y + enemy.height + 15, 240, 65, 65, filled=True)
@@ -228,9 +240,15 @@ class Game:
                 draw_world(enemy.x, enemy.y + enemy.height + 19,
                                   enemy.x + enemy.width * enemy.stagger / enemy.stagger_limit,
                                   enemy.y + enemy.height + 24, 180, 80, 230, filled=True)
-            if enemy.attack is not None and enemy.attack.phase == "ACTIVE":
+            if (enemy.attack is not None and enemy.attack.phase == "ACTIVE"
+                    and (not hasattr(enemy, 'kind') or self.show_hitboxes)):
                 box = enemy.attack.bounds
                 draw_world(box.left, box.bottom, box.right, box.top, 255, 70, 70)
+        for shot in getattr(self, 'projectiles', ()):
+            draw_world(shot.x, shot.y, shot.x + shot.width, shot.y + shot.height,
+                       55, 185, 235, filled=True)
+            draw_world(shot.x + 5, shot.y + 5, shot.x + shot.width - 5, shot.y + shot.height - 5,
+                       195, 255, 255, filled=True)
         weapon_color = (110, 190, 250) if player.weapon == "basic" else (215, 145, 65)
         p2d.draw_rectangle(130, 675, 155 if player.weapon == "basic" else 180,
                           695, *weapon_color, filled=True)
@@ -309,6 +327,112 @@ class Game:
         p2d.update_canvas()
 
 
+class MapGame(Game):
+    """실행 기본 모드. 기존 Game은 이전 장승마을 회귀 검사용으로 보존한다."""
+    def __init__(self):
+        super().__init__()
+        self.saved_room = None
+        self.cleared_rooms = set()
+        self.projectiles = []
+        self.enter_room(0)
+
+    @property
+    def room_clear(self):
+        return not self.enemies and (self.boss is None or self.boss.death_done)
+
+    def enter_room(self, index, hp=None, weapon='basic'):
+        from map_route import ROOMS
+        self.room_index = index
+        self.stage = ROOMS[index]
+        self.world = self.stage.create_world()
+        self.camera = Camera(self.stage.width)
+        self.player = Player(100, 100, weapon=weapon)
+        if hp is not None:
+            self.player.hp = hp
+        self.hero_animation = HeroAnimation()
+        self.enemies = self.stage.create_enemies()
+        self.boss = self.stage.create_boss()
+        self.boss_active = self.boss is not None
+        self.dummy = TrainingDummy()
+        self.dummy.hp = 0
+        self.dummy.x = -1000
+        self.checkpoint = Checkpoint((640, 100) if self.stage.category == 'save' else (-1000, 100))
+        self.checkpoint.active = self.stage.category == 'save' and self.saved_room is not None
+        self.projectiles.clear()
+        self.at_boss_gate = self.victory = False
+        self.inputs = InputState()
+        self.camera.follow(self.player)
+
+    def restart(self):
+        self.cleared_rooms = set(range(self.saved_room)) if self.saved_room is not None else set()
+        self.enter_room(self.saved_room if self.saved_room is not None else 0)
+        if self.saved_room is not None:
+            self.player.x, self.player.y = self.checkpoint.spawn
+            self.camera.follow(self.player)
+
+    def update(self, dt):
+        if sdl2.SDLK_F2 in self.inputs.pressed:
+            self.show_hitboxes = not self.show_hitboxes
+        if sdl2.SDLK_r in self.inputs.pressed:
+            self.restart()
+            return
+        if self.player.hp <= 0 or self.victory:
+            return
+        self.elapsed += dt
+        previous_x = self.player.x
+        direction = int(sdl2.SDLK_RIGHT in self.inputs.held) - int(sdl2.SDLK_LEFT in self.inputs.held)
+        self.combat.begin_frame()
+        remaining, first = dt, True
+        while remaining > 1e-9:
+            step = min(remaining, PHYSICS_STEP)
+            remaining -= step
+            self.combat.update_target(self.player, step)
+            self.player.update(step, direction, first and sdl2.SDLK_c in self.inputs.pressed,
+                               self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
+                               dash_pressed=first and sdl2.SDLK_z in self.inputs.pressed,
+                               attack_pressed=first and sdl2.SDLK_x in self.inputs.pressed,
+                               switch_pressed=first and sdl2.SDLK_SPACE in self.inputs.pressed)
+            actors = self.enemies + ([self.boss] if self.boss else [])
+            for actor in actors:
+                self.combat.update_target(actor, step)
+                actor.update(step, self.player, self.world)
+                self.projectiles.extend(actor.projectiles)
+                actor.projectiles.clear()
+            if self.player.attack:
+                self.combat.resolve([self.player.attack], actors)
+            for actor in actors:
+                if actor.attack:
+                    self.combat.resolve([actor.attack], [self.player])
+            for shot in self.projectiles:
+                shot.update(step, self.world)
+                self.combat.resolve([shot], [self.player])
+            self.projectiles = [s for s in self.projectiles if s.phase == 'ACTIVE' and not s.hit_targets]
+            self.enemies = [e for e in self.enemies if not e.death_done]
+            if self.player.hp <= 0:
+                for actor in actors:
+                    actor.attack = None
+                self.projectiles.clear()
+                break
+            first = False
+        self.camera.follow(self.player)
+        self.hero_animation.update(self.player, dt, previous_x)
+        if self.room_clear:
+            self.cleared_rooms.add(self.room_index)
+            if self.stage.category == 'main':
+                self.victory = True
+                self.player.attack = None
+                self.player.attack_queued = self.player.switch_queued = False
+                self.projectiles.clear()
+        gate = self.stage.boss_entrance
+        self.at_boss_gate = (self.player.x + self.player.width >= gate.left
+                            and self.player.y < gate.top and self.player.grounded)
+        if sdl2.SDLK_UP in self.inputs.pressed and self.player.hp > 0 and not self.victory:
+            if self.stage.category == 'save' and self.checkpoint.activate(self.player):
+                self.saved_room = self.room_index
+            if self.at_boss_gate and self.room_clear:
+                self.enter_room(self.room_index + 1, self.player.hp, self.player.weapon)
+
+
 def run(frame_hook=None):
     """frame_hook은 실제 SDL 이벤트를 주입하는 실행 검증용이다."""
     p2d.open_canvas(WINDOW_WIDTH, WINDOW_HEIGHT, sync=True)
@@ -320,7 +444,7 @@ def run(frame_hook=None):
             raise RuntimeError("논리 화면 크기를 설정하지 못했습니다.")
         sdl2.SDL_SetWindowResizable(p2d.window, sdl2.SDL_TRUE)
         sdl2.SDL_MaximizeWindow(p2d.window)
-        game = Game()
+        game = MapGame()
         previous = perf_counter()
         fps_elapsed = 0.0
         fps_frames = 0
@@ -365,6 +489,9 @@ def run(frame_hook=None):
                     title = (f"JOHWAROK - Old Dokkaebi HP {game.boss.hp}/{game.boss.max_hp}"
                              f" | {game.boss.pattern}: {game.boss.state}"
                              f" | Player HP {game.player.hp} | X: attack | C: jump | Z: dash | Space: switch | R: retry")
+                if isinstance(game, MapGame):
+                    title = (f"JOHWAROK / DEMO | {game.room_index + 1}/7 {game.stage.name}"
+                             f" | HP {game.player.hp} | Up: exit / save | R: restart | Esc: quit")
                 sdl2.SDL_SetWindowTitle(p2d.window, title.encode("utf-8"))
                 fps_elapsed = 0.0
                 fps_frames = 0
