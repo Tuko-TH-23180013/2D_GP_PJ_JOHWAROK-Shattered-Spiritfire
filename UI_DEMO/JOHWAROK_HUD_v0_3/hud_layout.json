@@ -1,0 +1,137 @@
+{
+  "canvas": [
+    1280,
+    720
+  ],
+  "coordinates": "bottom-left in Pico2D, preview is top-left",
+  "layers": {
+    "player_panel": {
+      "center": [
+        257,
+        72
+      ],
+      "size": [
+        485,
+        116
+      ]
+    },
+    "portrait_dokkaebi": {
+      "center": [
+        75,
+        75
+      ],
+      "size": [
+        108,
+        108
+      ]
+    },
+    "weapon_slots": {
+      "centers": [
+        [
+          166,
+          87
+        ],
+        [
+          241,
+          87
+        ]
+      ],
+      "size": [
+        72,
+        72
+      ]
+    },
+    "health_frame": {
+      "center": [
+        292,
+        35
+      ],
+      "size": [
+        323,
+        31
+      ]
+    },
+    "dash": {
+      "centers": [
+        [
+          164,
+          18
+        ],
+        [
+          202,
+          18
+        ]
+      ],
+      "size": [
+        36,
+        45
+      ]
+    },
+    "ability_panel": {
+      "center": [
+        631,
+        69
+      ],
+      "size": [
+        182,
+        108
+      ]
+    },
+    "ability_slots": {
+      "centers": [
+        [
+          587,
+          70
+        ],
+        [
+          667,
+          70
+        ]
+      ],
+      "size": [
+        63,
+        63
+      ]
+    },
+    "currency_panel": {
+      "center": [
+        1162,
+        67
+      ],
+      "size": [
+        191,
+        100
+      ]
+    },
+    "boss_panel": {
+      "center": [
+        640,
+        658
+      ],
+      "size": [
+        650,
+        83
+      ]
+    },
+    "boss_health_frame": {
+      "center": [
+        639,
+        661
+      ],
+      "size": [
+        602,
+        23
+      ]
+    },
+    "boss_stagger_frame": {
+      "center": [
+        639,
+        632
+      ],
+      "size": [
+        500,
+        16
+      ]
+    }
+  }
+}
