@@ -1,5 +1,5 @@
 import unittest
-from demo_bosses import Hahoe
+from demo_bosses import Hahoe, Guardian
 from player import Player
 from world import World, Rect
 from combat_system import CombatSystem
@@ -44,3 +44,34 @@ class DemoBossTests(unittest.TestCase):
         self.assertFalse(boss.death_done)
         boss.update(2, self.player, self.world)
         self.assertTrue(boss.death_done)
+
+    def test_guardian_alternates_and_wall_ends_rush(self):
+        boss = Guardian(500)
+        boss.cooldown = 0
+        boss.update(.01, self.player, self.world)
+        self.assertEqual(boss.sheet, 'guardian_sweep')
+        boss.update(1.5, self.player, self.world)
+        boss.update(.5, self.player, self.world)
+        self.assertEqual(boss.sheet, 'guardian')
+        self.assertEqual(boss.pattern, 'RUSH')
+        boss.x = 1500
+        boss.attack.facing = 1
+        boss.attack.elapsed = boss.attack.data.startup
+        boss.update(.1, self.player, self.world)
+        self.assertEqual(boss.attack.phase, 'RECOVERY')
+        self.assertLessEqual(boss.x + boss.width, 1600)
+
+    def test_guardian_reactions_and_sweep_hold(self):
+        boss = Guardian(500)
+        boss.cooldown = 0
+        boss.update(.01, self.player, self.world)
+        first_pose = pose(boss)
+        boss.update(.3, self.player, self.world)
+        self.assertNotEqual(pose(boss), first_pose)
+        boss.stagger_remaining = 2
+        boss.on_combat_hit()
+        self.assertEqual(pose(boss), ('guardian_reactions', 2))
+        boss.hp = 0
+        boss.on_combat_hit()
+        boss.update(.1, self.player, self.world)
+        self.assertEqual(pose(boss)[0], 'guardian_death')

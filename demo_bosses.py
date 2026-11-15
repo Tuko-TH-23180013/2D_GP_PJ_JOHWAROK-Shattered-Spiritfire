@@ -1,6 +1,6 @@
 """데모 보스 전용 행동. Boss의 스태거/다운/기상 규칙을 공유한다."""
 from attack import Attack, AttackData
-from boss import Boss
+from boss import Boss, SWING, RUSH
 from monsters import DemoLife
 
 SLASH = AttackData('Hahoe slash', .55, .15, .50, 18, 0, 130, 100)
@@ -62,4 +62,32 @@ class Hahoe(DemoBoss):
         self.pattern = 'SLASH' if abs(dx) <= 130 else 'THRUST'
         self.sheet = 'hahoe' if self.pattern == 'SLASH' else 'hahoe_thrust'
         self.attack = Attack(self, SLASH if self.pattern == 'SLASH' else THRUST)
+        self.state = 'STARTUP'
+
+
+class Guardian(DemoBoss):
+    def __init__(self, x=1100, y=100):
+        super().__init__(x, y)
+        self.init_demo('guardian')
+        self.sheet = 'guardian_sweep'
+
+    def update(self, dt, player, world):
+        if not self.begin_update(dt, player, world):
+            return
+        if self.attack:
+            self.advance_pattern(dt, world, 600 if self.pattern == 'RUSH' else 0)
+            return
+        self.cooldown = max(0, self.cooldown - dt)
+        if self.cooldown > 0:
+            return
+        dx = player.x + player.width / 2 - self.x - self.width / 2
+        self.facing = 1 if dx >= 0 else -1
+        self.pattern = 'SWING' if self.pattern_index % 2 == 0 else 'RUSH'
+        if self.pattern == 'SWING' and abs(dx) > 190:
+            self.state = 'APPROACH'
+            world.move_x(self, self.facing * 130 * dt)
+            return
+        self.sheet = 'guardian_sweep' if self.pattern == 'SWING' else 'guardian'
+        self.attack = Attack(self, SWING if self.pattern == 'SWING' else RUSH)
+        self.pattern_index += 1
         self.state = 'STARTUP'
