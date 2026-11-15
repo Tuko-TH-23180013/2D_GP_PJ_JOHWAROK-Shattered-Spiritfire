@@ -210,6 +210,7 @@ class Game:
         visible_enemies = self.enemies + ([self.boss] if self.boss_active and
                          (self.boss.hp > 0 or (hasattr(self.boss, 'death_done') and not self.boss.death_done)) else [])
         for enemy in visible_enemies:
+            self.visuals.draw_attack_telegraph(enemy, self.camera)
             if hasattr(enemy, 'kind'):
                 self.visuals.draw_monster(enemy, self.camera)
                 if enemy.hp <= 0:

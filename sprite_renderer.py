@@ -41,6 +41,36 @@ class DemoSprites:
         finally:
             sdl2.SDL_SetTextureColorMod(image.texture, 255, 255, 255)
 
+    def draw_attack_telegraph(self, actor, camera):
+        from pico2d import pico2d as p2d
+        from attack_telegraph import attack_telegraph
+        cue = attack_telegraph(actor)
+        if cue is None:
+            return
+        color = (255, 220, 60) if int(cue.progress * 8) % 2 == 0 else (255, 145, 40)
+        b = cue.bounds
+        # 경로 예상치이며 벽 정지/회피에 따라 실제 도달 위치는 달라진다.
+        p2d.draw_rectangle(b.left - camera.x, b.bottom, b.right - camera.x, b.top, *color)
+        sx, sy = cue.start
+        ex, ey = cue.end
+        dx, dy = ex - sx, ey - sy
+        length = max(1, (dx * dx + dy * dy) ** .5)
+        ux, uy = dx / length, dy / length
+        for i in range(1, max(2, int(length / 14))):
+            t = i / max(2, int(length / 14))
+            x, y = sx + dx * t - camera.x, sy + dy * t
+            p2d.draw_rectangle(x - 2, y - 2, x + 2, y + 2, *color, filled=True)
+        for side in (-1, 1):
+            for i in range(8):
+                x = ex - ux * i * 2 + side * uy * i - camera.x
+                y = ey - uy * i * 2 - side * ux * i
+                p2d.draw_rectangle(x - 1, y - 1, x + 1, y + 1, *color, filled=True)
+        x = actor.x + actor.width / 2 - camera.x
+        y = actor.y + actor.height + 40
+        self.font.draw(x - 4, y + 12, '!', color)
+        p2d.draw_rectangle(x - 30, y - 8, x + 30, y - 3, 75, 65, 35, filled=True)
+        p2d.draw_rectangle(x - 30, y - 8, x - 30 + 60 * cue.progress, y - 3, *color, filled=True)
+
     def draw_background(self, camera):
         from pico2d import pico2d as p2d
         # 원본 배경의 데모 제목/조작 안내를 제외한 풍경 띠만 사용한다.
