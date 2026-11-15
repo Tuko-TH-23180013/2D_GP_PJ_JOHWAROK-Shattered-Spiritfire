@@ -91,7 +91,8 @@ class DemoSprites:
         height = 212 * (1280 / 960) * camera.zoom
         offset = (camera.x * camera.zoom * 0.15) % width
         floor_y = camera.ground_screen_y - camera.y * camera.zoom * .15
-        for left in (-offset, width - offset):
+        for index in range(int(1280 // width) + 2):
+            left = index * width - offset
             self.background.clip_draw(0, 148, 960, 212, left + width / 2,
                                       floor_y + height / 2, width, height)
         self.background.clip_draw(700, 350, 200, 180, 1100, 550, 200, 180)

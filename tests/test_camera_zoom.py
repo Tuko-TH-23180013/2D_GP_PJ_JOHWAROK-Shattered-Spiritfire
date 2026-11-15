@@ -39,15 +39,23 @@ class CameraZoomTests(unittest.TestCase):
 
     def test_boss_room_can_override_zoom_without_changing_combat(self):
         rooms = list(ROOMS)
-        rooms[6] = replace(rooms[6], camera_zoom=1.15)
+        rooms[6] = replace(rooms[6], camera_zoom=.75)
         with patch('map_route.ROOMS', tuple(rooms)):
             game = MapGame()
-            self.assertEqual(game.camera.zoom, 1.5)
+            self.assertEqual(game.camera.zoom, .9)
             game.enter_room(6)
-            self.assertEqual(game.camera.zoom, 1.15)
+            self.assertEqual(game.camera.zoom, .75)
             self.assertEqual(game.boss.hp, 500)
             self.assertEqual(game.player.width, 36)
 
     def test_invalid_zoom_rejected(self):
         with self.assertRaises(ValueError):
             Camera(1900, zoom=0)
+
+    def test_zoomed_out_small_room_is_centered(self):
+        camera = Camera(1280, zoom=.9)
+        camera.follow(Player())
+        left = camera.screen_point(0, 100)[0]
+        right = camera.screen_point(1280, 100)[0]
+        self.assertAlmostEqual(left, 1280 - right)
+        self.assertGreater(left, 0)

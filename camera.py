@@ -20,8 +20,11 @@ class Camera:
         return self.view_width / self.zoom
 
     def follow(self, player):
-        self.x = max(0.0, min(player.x + player.width / 2 - self.visible_width / 2,
-                             max(0.0, self.world_width - self.visible_width)))
+        if self.world_width < self.visible_width:
+            self.x = (self.world_width - self.visible_width) / 2
+        else:
+            self.x = max(0.0, min(player.x + player.width / 2 - self.visible_width / 2,
+                                 self.world_width - self.visible_width))
         if self.vertical_follow:
             self.y = max(0.0, player.y + player.height - 100 - (WINDOW_HEIGHT - self.ground_screen_y - 100) / self.zoom)
 

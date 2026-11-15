@@ -86,7 +86,7 @@ class StageTests(unittest.TestCase):
         self.assertEqual(camera.x, 1920)
         small = Camera(500)
         small.follow(p)
-        self.assertEqual(small.x, 0)
+        self.assertEqual(small.x, (500 - 1280) / 2)
 
     def test_scrolled_combat_uses_world_coordinates(self):
         from main import Game

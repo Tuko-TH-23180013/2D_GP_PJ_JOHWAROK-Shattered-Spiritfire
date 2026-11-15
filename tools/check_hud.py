@@ -47,7 +47,7 @@ def main():
         present()
         game.enter_room(6)
         game.player.x = game.boss.x - 180
-        game.camera.zoom = 1.15
+        game.camera.zoom = .75
         game.camera.follow(game.player)
         game.draw()
         capture('johwarok-camera-boss-wide.png')

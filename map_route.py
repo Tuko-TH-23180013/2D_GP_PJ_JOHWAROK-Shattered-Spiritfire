@@ -12,7 +12,7 @@ class Room:
     width: int
     spawns: tuple = ()
     platforms: tuple = ()
-    camera_zoom: float = 1.5  # 큰 보스 맵은 별도 배율 지정 가능.
+    camera_zoom: float = 0.9  # 참고 이미지의 캐릭터 높이 약 9~10% 기준.
 
     @property
     def regions(self):
