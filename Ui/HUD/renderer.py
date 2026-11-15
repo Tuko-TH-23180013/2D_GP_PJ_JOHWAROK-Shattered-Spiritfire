@@ -136,9 +136,10 @@ class HUD:
             self.text(640, 316, 'R 체크포인트에서 재시작', 'R restart from checkpoint', centered=True, font=self.small)
         elif hasattr(game, 'room_index'):
             gate = game.stage.boss_entrance
-            x = max(70, min(1210, (gate.left + gate.right) / 2 - game.camera.x))
-            if gate.right >= game.camera.x and gate.left <= game.camera.x + 1280:
-                self.text(x, gate.top + 24, '↑ 다음 맵' if game.room_clear else '잠김',
+            x, y = game.camera.screen_point((gate.left + gate.right) / 2, gate.top + 24)
+            x = max(70, min(1210, x))
+            if gate.right >= game.camera.x and gate.left <= game.camera.x + game.camera.visible_width:
+                self.text(x, y, '↑ 다음 맵' if game.room_clear else '잠김',
                           'UP: next map' if game.room_clear else 'Locked', centered=True, color=GOLD)
         elif game.checkpoint.can_activate(game.player):
             self.text(640, 565, '체크포인트 활성' if game.checkpoint.active else '↑ 체크포인트 활성화',

@@ -16,6 +16,7 @@ def main():
     try:
         p2d.update_canvas = lambda: None
         game.player.x = 450
+        game.camera.follow(game.player)
         for hp, charges, weapon in ((100, 2, 'basic'), (37, 1, 'giant'), (0, 0, 'giant')):
             game.player.hp, game.player.dash_charges, game.player.weapon = hp, charges, weapon
             game.player.recharge_remaining = DASH_RECHARGE / 2
@@ -30,11 +31,27 @@ def main():
         assert resource is game.visuals.hud
         for index in (2, 6):
             game.enter_room(index)
+            game.player.x = game.boss.x - 180
+            game.camera.follow(game.player)
             game.boss.hp //= 2
             game.boss.stagger = game.boss.stagger_limit * .6
             game.draw()
             capture(f'johwarok-hud-boss-{index}.png')
             present()
+        game.enter_room(1)
+        game.player.x, game.player.y = 1000, 580
+        game.camera.follow(game.player)
+        game.show_hitboxes = True
+        game.draw()
+        capture('johwarok-camera-high-platform.png')
+        present()
+        game.enter_room(6)
+        game.player.x = game.boss.x - 180
+        game.camera.zoom = 1.15
+        game.camera.follow(game.player)
+        game.draw()
+        capture('johwarok-camera-boss-wide.png')
+        present()
         game.enter_room(3)
         game.draw()
         capture('johwarok-hud-save.png')

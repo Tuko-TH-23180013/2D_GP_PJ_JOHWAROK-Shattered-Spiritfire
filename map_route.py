@@ -12,6 +12,7 @@ class Room:
     width: int
     spawns: tuple = ()
     platforms: tuple = ()
+    camera_zoom: float = 1.5  # 큰 보스 맵은 별도 배율 지정 가능.
 
     @property
     def regions(self):

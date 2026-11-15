@@ -327,7 +327,8 @@ class MapGame(Game):
         self.room_index = index
         self.stage = ROOMS[index]
         self.world = self.stage.create_world()
-        self.camera = Camera(self.stage.width)
+        self.camera = Camera(self.stage.width, zoom=self.stage.camera_zoom,
+                             ground_screen_y=140, vertical_follow=True)
         self.player = Player(100, 100, weapon=weapon)
         if hp is not None:
             self.player.hp = hp
