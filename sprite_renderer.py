@@ -9,8 +9,37 @@ class DemoSprites:
         self.background = p2d.load_image(str(ASSET_ROOT / "village.png"))
         self.dummy = p2d.load_image(str(ASSET_ROOT / "dummy.png"))
         self.font = p2d.load_font(str(ASSET_ROOT / "font.ttf"), 18)
+        self.monster_images = {}
         if (self.hero.w, self.hero.h) != (800, 800):
             raise ValueError("데모 hero.png는 800×800 시트여야 합니다.")
+
+    def draw_monster(self, monster, camera):
+        from pico2d import pico2d as p2d
+        from monster_sprites import CATALOG, pose
+        import sdl2
+        if monster.death_done:
+            return
+        sheet_id, frame = pose(monster)
+        sheet = CATALOG[sheet_id]
+        if sheet_id not in self.monster_images:
+            self.monster_images[sheet_id] = p2d.load_image(str(sheet['file']))
+        image = self.monster_images[sheet_id]
+        cw, ch = sheet['frame_size']
+        px, py = sheet['pico2d_pivot']
+        # 원본 아트의 투명 여백 대신 실제 몸 높이로 배율을 통일한다.
+        scale = monster.height / sheet['reference_body_height_px']
+        facing = monster.attack.facing if monster.attack else monster.facing
+        pivot_x = cw - px if facing < 0 else px
+        anchor_y = monster.y + (monster.height / 2 if getattr(monster, 'flying', False) else 0)
+        x = monster.x + monster.width / 2 - camera.x + (cw / 2 - pivot_x) * scale
+        y = anchor_y + (ch / 2 - py) * scale
+        tint = (255, 140, 140) if monster.hit_flash > 0 else (255, 255, 255)
+        sdl2.SDL_SetTextureColorMod(image.texture, *tint)
+        try:
+            image.clip_composite_draw(frame * cw, 0, cw, ch, 0,
+                                      'h' if facing < 0 else '', x, y, cw * scale, ch * scale)
+        finally:
+            sdl2.SDL_SetTextureColorMod(image.texture, 255, 255, 255)
 
     def draw_background(self, camera):
         from pico2d import pico2d as p2d
