@@ -81,6 +81,58 @@ class MonsterTests(unittest.TestCase):
         self.assertEqual(shot.phase, 'DONE')
         self.assertEqual(enemy.projectiles, [])
 
+    def test_ember_does_not_chase_or_fire_without_detection(self):
+        for x, y in ((1300, 100), (580, 400)):
+            with self.subTest(x=x, y=y):
+                enemy = Monster('ember', 500, 100)
+                self.player.x, self.player.y = x, y
+                self.advance(enemy, 5)
+                self.assertEqual(enemy.state, 'IDLE')
+                self.assertEqual(enemy.x, 500)
+                self.assertIsNone(enemy.attack)
+                self.assertEqual(enemy.projectiles, [])
+
+    def test_ember_losing_detection_before_shot_cancels_at_all_frame_rates(self):
+        for fps in (20, 60, 144):
+            for x, y in ((1300, 100), (580, 400)):
+                enemy = Monster('ember', 500, 100)
+                self.player.x, self.player.y = 580, 100
+                enemy.update(1 / fps, self.player, self.world)
+                self.assertIsNotNone(enemy.attack)
+                enemy.attack.elapsed = enemy.spec.attack.startup - .001
+                self.player.x, self.player.y = x, y
+                for _ in range(fps * 3):
+                    enemy.update(1 / fps, self.player, self.world)
+                self.assertIsNone(enemy.attack)
+                self.assertEqual(enemy.projectiles, [])
+                self.assertEqual(enemy.state, 'IDLE')
+
+    def test_ember_reacquires_with_new_windup(self):
+        enemy = Monster('ember', 500, 100)
+        enemy.update(.01, self.player, self.world)
+        old_attack = enemy.attack
+        self.player.y = 400
+        self.advance(enemy, 1)
+        self.player.y = 100
+        enemy.update(.01, self.player, self.world)
+        self.assertIsNot(enemy.attack, old_attack)
+        self.assertEqual(enemy.attack.phase, 'STARTUP')
+        self.advance(enemy, .4)
+        self.assertEqual(enemy.projectiles, [])
+        self.advance(enemy, .3)
+        self.assertEqual(len(enemy.projectiles), 1)
+
+    def test_ember_detection_loss_keeps_already_emitted_shot(self):
+        enemy = Monster('ember', 500, 100)
+        self.advance(enemy, .8)
+        shot = enemy.projectiles.pop()
+        self.player.x = 1300
+        self.advance(enemy, 3)
+        self.assertEqual(enemy.projectiles, [])
+        previous = shot.x
+        shot.update(.01, self.world)
+        self.assertGreater(shot.x, previous)
+
     def test_projectile_hits_once_and_stops_at_wall(self):
         enemy = Monster('ember', 500)
         enemy.facing = 1

@@ -11,6 +11,8 @@ from world import Rect
 
 # 거대 방망이 1타→2타(최대 약 0.74초 간격)도 이어지는 임시 경직 시간.
 NORMAL_HITSTUN = .80
+EMBER_DETECTION_X = 640.0
+EMBER_DETECTION_Y = 100.0  # 중심 간 높이 차이. 데모 인식 범위 임시값.
 
 
 @dataclass(frozen=True)
@@ -115,6 +117,12 @@ class Monster(DemoLife, Enemy):
         if self.attack:
             self.attack.elapsed = self.attack.data.startup + self.attack.data.active
 
+    def detects_player(self, player):
+        dx = player.x + player.width / 2 - self.x - self.width / 2
+        dy = player.y + player.height / 2 - self.y - self.height / 2
+        return (player.hp > 0 and abs(dx) <= EMBER_DETECTION_X
+                and abs(dy) <= EMBER_DETECTION_Y)
+
     def update(self, dt, player, world):
         if self.update_death(dt):
             return
@@ -136,6 +144,13 @@ class Monster(DemoLife, Enemy):
             return
         if self.stagger_remaining > 0:
             self.state, self.attack = 'STAGGER', None
+            return
+        if self.kind == 'ember' and not self.detects_player(player):
+            # 공격 시작뿐 아니라 발사 직전에도 현재 위치의 인식 여부를 확인한다.
+            if self.attack is not None:
+                self.cooldown = max(self.cooldown, .5)
+            self.state, self.attack = 'IDLE', None
+            self.triggered = False
             return
         if self.attack:
             self.attack.advance(dt)
