@@ -106,3 +106,23 @@ class HUDTests(unittest.TestCase):
         hud.korean = False
         hud.text(10, 20, '장승마을', 'Jangseung village')
         self.assertEqual(hud.font.draw.call_args.args[2], 'Jangseung village')
+
+    def test_encounter_hud_distinguishes_travel_from_final_clear(self):
+        from unittest.mock import Mock, patch
+        from Ui.HUD.renderer import HUD
+        from main import MapGame
+        hud = HUD.__new__(HUD)
+        hud.asset, hud.text, hud.small = Mock(), Mock(), Mock()
+        game = MapGame()
+        with patch('Ui.HUD.renderer.p2d.draw_rectangle'):
+            hud.draw_location(game)
+            self.assertTrue(any('전투 1/2 · 남은 적 2' in c.args for c in hud.text.call_args_list))
+            for enemy in game.enemies:
+                enemy.hp = 0
+                enemy.on_combat_hit()
+            for _ in range(120):
+                game.update(1 / 60)
+            hud.text.reset_mock()
+            hud.draw_location(game)
+            self.assertFalse(game.room_clear)
+            self.assertTrue(any('구역 정리 · 오른쪽으로 이동' in c.args for c in hud.text.call_args_list))

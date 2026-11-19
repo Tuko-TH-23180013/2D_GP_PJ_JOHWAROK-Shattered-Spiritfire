@@ -124,8 +124,32 @@ class HUD:
             ko, en = ('전투 완료', 'Battle complete') if game.victory else ('출구 열림 · ↑ 이동', 'Exit open / UP to enter')
         else:
             alive = sum(e.hp > 0 for e in game.enemies) + int(game.boss is not None and game.boss.hp > 0)
-            ko, en = f'남은 적 {alive} · 출구 잠김', f'Enemies {alive} / Exit locked'
+            flow = getattr(game, 'encounters', None)
+            if flow is not None and flow.zones and flow.active_index is None:
+                ko, en = '구역 정리 · 오른쪽으로 이동', 'Area clear / Continue right'
+            elif flow is not None and flow.zones:
+                number, total = flow.active_index + 1, len(flow.zones)
+                ko, en = f'전투 {number}/{total} · 남은 적 {alive}', f'Battle {number}/{total} / Enemies {alive}'
+            else:
+                ko, en = f'남은 적 {alive} · 출구 잠김', f'Enemies {alive} / Exit locked'
         self.text(1145, 581, ko, en, centered=True, font=self.small, color=GOLD)
+        self.draw_stage_progress(game)
+
+    def draw_stage_progress(self, game):
+        flow = getattr(game, 'encounters', None)
+        if flow is None or not flow.zones:
+            return
+        left, width, y = 1040, 210, 552
+        p2d.draw_rectangle(left, y - 2, left + width, y + 2, 50, 55, 68, filled=True)
+        for i, zone in enumerate(flow.zones):
+            a = left + width * zone.trigger_x / game.stage.width
+            b = left + width * zone.gate_x / game.stage.width
+            color = CYAN if i < flow.completed else GOLD if i == flow.active_index else (70, 70, 90)
+            p2d.draw_rectangle(a, y - 3, b, y + 3, *color, filled=True)
+        x = left + width * ratio(game.player.x + game.player.width / 2, game.stage.width)
+        p2d.draw_rectangle(x - 2, y - 7, x + 2, y + 7, *PALE, filled=True)
+        self.text(1145, 532, f'전투 구역 {flow.completed}/{len(flow.zones)} 완료',
+                  f'Areas cleared {flow.completed}/{len(flow.zones)}', centered=True, font=self.small, color=GOLD)
 
     def draw_notifications(self, game):
         if game.victory:
@@ -135,6 +159,11 @@ class HUD:
             self.text(640, 405, '혼불이 꺼졌습니다', 'YOU DIED', centered=True, color=(255, 170, 180))
             self.text(640, 316, 'R 체크포인트에서 재시작', 'R restart from checkpoint', centered=True, font=self.small)
         elif hasattr(game, 'room_index'):
+            flow = getattr(game, 'encounters', None)
+            if flow is not None and flow.gate is not None:
+                gx, gy = game.camera.screen_point(flow.gate.left, 310)
+                if 60 < gx < 1220:
+                    self.text(gx, gy, '적을 처치하면 개방', 'Defeat enemies to open', centered=True, font=self.small, color=CYAN)
             gate = game.stage.boss_entrance
             x, y = game.camera.screen_point((gate.left + gate.right) / 2, gate.top + 24)
             x = max(70, min(1210, x))
