@@ -105,7 +105,7 @@ class MapRouteTests(unittest.TestCase):
             game.boss_active = False
             game.inputs.held = {sdl2.SDLK_RIGHT}
             # 최종 방에서도 경로를 검사하도록 승리 정지만 해제한다.
-            for _ in range(420):
+            for _ in range(round(game.stage.width / 300 * 60) + 60):
                 game.victory = False
                 game.update(1 / 60)
             self.assertGreaterEqual(game.player.x + game.player.width, game.stage.boss_entrance.left)
