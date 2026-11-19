@@ -186,6 +186,12 @@ class Game:
                           24, 28, 36, filled=True)
         self.visuals.draw_background(self.camera)
         for solid in self.world.solids:
+            if solid is getattr(getattr(self, 'encounters', None), 'gate', None):
+                # 전투 봉쇄는 일반 지형과 구분되는 임시 혼불 장벽으로 표시한다.
+                draw_world(solid.left, solid.bottom, solid.right, solid.top, 35, 115, 155, filled=True)
+                for y in range(110, 720, 35):
+                    draw_world(solid.left - 4, y, solid.right + 4, y + 10, 110, 235, 250, filled=True)
+                continue
             color = (110, 170, 140) if solid.one_way else (95, 110, 125)
             draw_world(solid.left, solid.bottom, solid.right, solid.top,
                               *color, filled=True)
@@ -320,10 +326,12 @@ class MapGame(Game):
 
     @property
     def room_clear(self):
-        return not self.enemies and (self.boss is None or self.boss.death_done)
+        return (self.encounters.finished and not self.enemies
+                and (self.boss is None or self.boss.death_done))
 
     def enter_room(self, index, hp=None, weapon='basic'):
         from map_route import ROOMS
+        from encounter_flow import EncounterFlow
         self.room_index = index
         self.stage = ROOMS[index]
         self.world = self.stage.create_world()
@@ -334,6 +342,7 @@ class MapGame(Game):
             self.player.hp = hp
         self.hero_animation = HeroAnimation()
         self.enemies = self.stage.create_enemies()
+        self.encounters = EncounterFlow(self.stage.encounters, self.world)
         self.boss = self.stage.create_boss()
         self.boss_active = self.boss is not None
         self.dummy = TrainingDummy()
@@ -391,6 +400,7 @@ class MapGame(Game):
                 self.combat.resolve([shot], [self.player])
             self.projectiles = [s for s in self.projectiles if s.phase == 'ACTIVE' and not s.hit_targets]
             self.enemies = [e for e in self.enemies if not e.death_done]
+            self.enemies.extend(self.encounters.update(self.player, self.enemies, self.world))
             if self.player.hp <= 0:
                 for actor in actors:
                     actor.attack = None

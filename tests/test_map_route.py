@@ -13,10 +13,18 @@ class MapRouteTests(unittest.TestCase):
             game.inputs.pressed.clear()
 
     def defeat_room(self, game):
-        for actor in game.enemies + ([game.boss] if game.boss else []):
-            actor.hp = 0
-            actor.on_combat_hit()
-        self.step(game, 2)
+        for _ in range(4):
+            for actor in game.enemies + ([game.boss] if game.boss else []):
+                actor.hp = 0
+                actor.on_combat_hit()
+            self.step(game, 2)
+            if game.room_clear:
+                return
+            if game.encounters.active_index is None:
+                zone = game.encounters.zones[game.encounters.next_index]
+                game.player.x, game.player.y = zone.trigger_x, 100
+                self.step(game, .1)
+        self.fail('room did not finish')
 
     def exit_room(self, game):
         game.player.x = game.stage.width - 115
@@ -63,6 +71,7 @@ class MapRouteTests(unittest.TestCase):
         self.assertEqual(game.room_index, 0)
         self.assertFalse(game.room_clear)
         self.step(game, 2)
+        self.defeat_room(game)
         self.exit_room(game)
         self.assertEqual(game.room_index, 1)
 
@@ -101,6 +110,10 @@ class MapRouteTests(unittest.TestCase):
             game = MapGame()
             game.enter_room(index)
             game.enemies.clear()
+            if game.encounters.gate is not None:
+                game.world.solids.remove(game.encounters.gate)
+            from encounter_flow import EncounterFlow
+            game.encounters = EncounterFlow((), game.world)
             game.boss = None
             game.boss_active = False
             game.inputs.held = {sdl2.SDLK_RIGHT}
