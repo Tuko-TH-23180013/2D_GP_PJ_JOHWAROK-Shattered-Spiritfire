@@ -184,6 +184,11 @@ class HUD:
         self.draw_boss(game)
         self.draw_location(game)
         self.draw_notifications(game)
+        if hasattr(game, 'rewards'):
+            self.asset('currency_panel', 1190, 52, 160, 76)
+            self.asset('currency_spirit', 1135, 48, 28, 32)
+            self.text(1160, 72, '혼불', 'Spirit', font=self.small, color=CYAN)
+            self.text(1160, 43, str(game.rewards.balance))
         self.text(775, 71, '방향키 이동  C 점프  ↓+C 하강', 'Arrows move / C jump / Down+C drop', font=self.small)
         self.text(775, 50, 'X 공격  Z 대시  Space 무기 전환', 'X attack / Z dash / Space switch', font=self.small)
         self.text(775, 29, '↑ 상호작용  R 재시작  F2 판정  Esc 종료',

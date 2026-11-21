@@ -322,6 +322,8 @@ class MapGame(Game):
         self.saved_room = None
         self.cleared_rooms = set()
         self.projectiles = []
+        from reward_system import RewardSystem
+        self.rewards = RewardSystem()
         self.enter_room(0)
 
     @property
@@ -333,6 +335,7 @@ class MapGame(Game):
         from map_route import ROOMS
         from encounter_flow import EncounterFlow
         self.room_index = index
+        self.rewards.reset_room()
         self.stage = ROOMS[index]
         self.world = self.stage.create_world()
         self.camera = Camera(self.stage.width, zoom=self.stage.camera_zoom,
@@ -399,6 +402,7 @@ class MapGame(Game):
                 shot.update(step, self.world)
                 self.combat.resolve([shot], [self.player])
             self.projectiles = [s for s in self.projectiles if s.phase == 'ACTIVE' and not s.hit_targets]
+            self.rewards.collect_defeats(actors, self.boss, self.stage.category)
             self.enemies = [e for e in self.enemies if not e.death_done]
             self.enemies.extend(self.encounters.update(self.player, self.enemies, self.world))
             if self.player.hp <= 0:
