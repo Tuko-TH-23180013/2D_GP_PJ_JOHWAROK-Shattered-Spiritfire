@@ -111,6 +111,22 @@ class DemoSprites:
     def draw_labels(self, game):
         self.hud.draw(game)
 
+    def draw_vitality_orbs(self, orbs, camera):
+        """원기구슬 가칭: 교체 가능한 임시 녹색 픽셀 구슬과 회복 십자."""
+        from pico2d import pico2d as p2d
+        for orb in orbs:
+            x, y = orb.x + 10, orb.y + 10
+            for left, bottom, right, top, color in (
+                (-7, -12, 7, 12, (26, 94, 66)),
+                (-12, -7, 12, 7, (26, 94, 66)),
+                (-6, -9, 6, 9, (85, 225, 145)),
+                (-9, -6, 9, 6, (85, 225, 145)),
+                (-2, -6, 2, 6, (235, 255, 215)),
+                (-6, -2, 6, 2, (235, 255, 215)),
+            ):
+                p2d.draw_rectangle(*camera.screen_rect(x + left, y + bottom, x + right, y + top),
+                                   *color, filled=True)
+
     def draw_hero(self, player, animation, camera):
         import sdl2
         facing = (player.attack.facing if player.attack is not None else

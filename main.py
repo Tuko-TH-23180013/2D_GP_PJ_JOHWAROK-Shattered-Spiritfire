@@ -289,6 +289,8 @@ class Game:
                 draw_world(flame_x + 2, player.y + rise,
                                   flame_x + 6, player.y + 18 + rise,
                                   170, 250, 250, filled=True)
+        if hasattr(self, 'rewards'):
+            self.visuals.draw_vitality_orbs(self.rewards.orbs, self.camera)
         self.visuals.draw_hero(player, self.hero_animation, self.camera)
         # 데모 포즈와 독립적인 기존 충돌/무적 상태를 확인할 수 있다.
         draw_world(player.x, player.y - 3, player.x + player.width,
@@ -402,7 +404,8 @@ class MapGame(Game):
                 shot.update(step, self.world)
                 self.combat.resolve([shot], [self.player])
             self.projectiles = [s for s in self.projectiles if s.phase == 'ACTIVE' and not s.hit_targets]
-            self.rewards.collect_defeats(actors, self.boss, self.stage.category)
+            self.rewards.collect_defeats(actors, self.boss, self.stage.category, self.player)
+            self.rewards.update(step, self.world, self.player)
             self.enemies = [e for e in self.enemies if not e.death_done]
             self.enemies.extend(self.encounters.update(self.player, self.enemies, self.world))
             if self.player.hp <= 0:
