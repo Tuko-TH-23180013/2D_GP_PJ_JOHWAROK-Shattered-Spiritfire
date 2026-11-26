@@ -13,6 +13,36 @@ class Rect:
 
 
 class World:
+    def sweep_position(self, body, dx, dy, ignored=()):
+        """몸 전체를 직선으로 쓸어 검사한다. 대각선을 축별 이동으로 꺾지 않는다."""
+        fraction = 1.0
+        for solid in self.solids:
+            if solid.one_way:
+                # 일반 점프와 동일: 아래에서 통과, 위에서 하강할 때만 착지.
+                if solid in ignored or dy >= 0 or body.y < solid.top - 1e-9:
+                    continue
+                time = (solid.top - body.y) / dy
+                x = body.x + dx * time
+                if 0 <= time <= fraction and x < solid.right and x + body.width > solid.left:
+                    fraction = time
+                continue
+            entry, leave = -float('inf'), float('inf')
+            for start, delta, low, high in (
+                (body.x, dx, solid.left-body.width, solid.right),
+                (body.y, dy, solid.bottom-body.height, solid.top),
+            ):
+                if abs(delta) <= 1e-12:
+                    if start <= low or start >= high:
+                        entry, leave = 1, -1
+                        break
+                else:
+                    a, b = sorted(((low-start)/delta, (high-start)/delta))
+                    entry, leave = max(entry, a), min(leave, b)
+            # 접촉면을 따라가거나 멀어지는 이동은 막지 않는다.
+            if leave > max(entry, 0) + 1e-12 and entry <= fraction and leave > 0:
+                fraction = max(0, entry)
+        return body.x + dx*fraction, body.y + dy*fraction
+
     def __init__(self, solids=None):
         # 피해 시스템 도입 전 무적 여부를 확인하는 임시 위험 구역.
         self.hazards = [Rect(650, 100, 730, 180)] if solids is None else []

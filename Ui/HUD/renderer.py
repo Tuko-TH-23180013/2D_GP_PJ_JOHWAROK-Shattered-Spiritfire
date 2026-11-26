@@ -90,7 +90,7 @@ class HUD:
             if abilities.giant_remaining > 1e-9:
                 ko, en = f'거대화 {abilities.giant_remaining:.1f}s', f'Buff {abilities.giant_remaining:.1f}s'
             elif abilities.equipped:
-                ready = abilities.available(game.player, game.world)
+                ready = abilities.available(game.player, game.world, game.inputs.ability_direction)
                 ko, en = ('Shift 사용 가능', 'Shift ready') if ready else ('Shift 대기', 'Shift waiting')
             else:
                 ko, en = 'Tab 보상 확인', 'Tab rewards'

@@ -29,6 +29,11 @@ class InputState:
     clicks: list = field(default_factory=list)
     focus_lost: bool = False
 
+    @property
+    def ability_direction(self):
+        return (int(sdl2.SDLK_RIGHT in self.held)-int(sdl2.SDLK_LEFT in self.held),
+                int(sdl2.SDLK_UP in self.held)-int(sdl2.SDLK_DOWN in self.held))
+
     def collect(self, events):
         self.pressed.clear()
         self.released.clear()
@@ -434,7 +439,7 @@ class MapGame(Game):
                     and not self.inputs.pressed & {sdl2.SDLK_x, sdl2.SDLK_z, sdl2.SDLK_SPACE}):
                 if direction:
                     self.player.facing = 1 if direction > 0 else -1
-                self.abilities.use(self.player, self.world)
+                self.abilities.use(self.player, self.world, self.inputs.ability_direction)
             self.player.update(step, direction, first and sdl2.SDLK_c in self.inputs.pressed,
                                self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
                                dash_pressed=first and sdl2.SDLK_z in self.inputs.pressed,

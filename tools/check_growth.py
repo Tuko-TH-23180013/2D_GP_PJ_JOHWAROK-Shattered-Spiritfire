@@ -75,7 +75,17 @@ def main():
         game.gear.open = False
         game.abilities.owned.add('blink')  # 교체 HUD 검사용 fixture
         game.abilities.equip('blink')
-        game.abilities.use(game.player, game.world)
+        events = []
+        for key in (sdl2.SDLK_RIGHT, sdl2.SDLK_UP, sdl2.SDLK_LSHIFT):
+            event = sdl2.SDL_Event()
+            event.type = sdl2.SDL_KEYDOWN
+            event.key.keysym.sym = key
+            events.append(event)
+        before_x, before_y = game.player.x, game.player.y
+        game.inputs.collect(events)
+        game.update(.016)
+        assert game.player.x > before_x + 150 and game.player.y > before_y + 150
+        assert game.abilities.cooldowns['blink'] > 0
         game.draw()
         capture('johwarok-growth-cooldowns.png')
         present()
