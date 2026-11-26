@@ -308,6 +308,9 @@ class Game:
                                   170, 250, 250, filled=True)
         if hasattr(self, 'rewards'):
             self.visuals.draw_vitality_orbs(self.rewards.orbs, self.camera)
+            from currency_visuals import draw_icon
+            for drop in self.rewards.currency_drops:
+                draw_icon(drop.kind, *self.camera.screen_point(drop.x+6,drop.y+6), 16*self.camera.zoom)
         self.visuals.draw_hero(player, self.hero_animation, self.camera)
         # 데모 포즈와 독립적인 기존 충돌/무적 상태를 확인할 수 있다.
         draw_world(player.x, player.y - 3, player.x + player.width,
@@ -362,6 +365,8 @@ class MapGame(Game):
         from encounter_flow import EncounterFlow
         self.room_index = index
         self.gear.reset_room()
+        if self.player.hp > 0:
+            self.rewards.bank_pending()
         self.rewards.reset_room()
         self.stage = ROOMS[index]
         self.world = self.stage.create_world()
@@ -432,7 +437,10 @@ class MapGame(Game):
         if sdl2.SDLK_r in self.inputs.pressed:
             self.restart()
             return
-        if self.player.hp <= 0 or self.victory:
+        if self.player.hp <= 0:
+            return
+        if self.victory:
+            self.rewards.update(dt,self.world,self.player)
             return
         item_interaction = self.gear.update_field(self, dt)
         if self.gear.open or self.gear.chest_open is not None:

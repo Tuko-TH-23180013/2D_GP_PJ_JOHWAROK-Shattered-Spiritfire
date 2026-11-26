@@ -93,7 +93,7 @@ class HUD:
                 ready = abilities.available(game.player, game.world, game.inputs.ability_direction)
                 ko, en = ('Shift 사용 가능', 'Shift ready') if ready else ('Shift 대기', 'Shift waiting')
             else:
-                ko, en = 'Tab 보상 확인', 'Tab rewards'
+                ko, en = '상자에서 획득', 'Find ability chest'
             self.text(624, 16, ko, en, centered=True, font=self.small, color=GOLD)
             return
         for key, x in (('A', 595), ('S', 653)):

@@ -28,6 +28,8 @@ class CurrencyTests(unittest.TestCase):
             actor = game.boss or game.enemies[0]
             actor.hp = 0
             game.update(.01)
+            for _ in range(120):
+                game.update(1/60)
             expected += amount
             self.assertEqual(game.rewards.jade,expected)
 
@@ -50,6 +52,7 @@ class CurrencyTests(unittest.TestCase):
         game = MapGame()
         game.enemies[0].hp = 0
         game.update(.01)
+        self.assertEqual(game.rewards.gold, 0)
         game.enter_room(3)
         self.assertEqual(game.rewards.gold, 5)
         game.saved_room = 3
