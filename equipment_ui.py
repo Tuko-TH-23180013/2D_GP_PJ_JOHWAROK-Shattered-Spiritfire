@@ -15,7 +15,7 @@ def buttons(game):
                        '기본 폼' if form == 'basic' else '거대 방망이 폼', form))
     if hasattr(game, 'abilities'):
         for i, (name, label) in enumerate((('enlarge', '거대화'), ('blink', '축지'))):
-            if gear.special_choices or name in game.abilities.owned:
+            if name in game.abilities.owned:
                 result.append((f'ability:{name}', (710+i*180, 180, 875+i*180, 230), label, name))
     return result
 
@@ -34,12 +34,7 @@ def handle_clicks(game):
                     game.gear.select_form(game, action.split(':')[1])
                 elif action.startswith('ability:'):
                     name = action.split(':')[1]
-                    if game.gear.special_choices and not game.gear.special_claimed:
-                        game.abilities.owned.add(name)
-                        game.gear.special_claimed = True
-                        game.gear.special_choices = False
-                        game.abilities.equip(name)
-                    elif game.gear.can_change_form(game):
+                    if game.gear.can_change_form(game):
                         game.abilities.equip(name)
                 break
 
@@ -65,9 +60,6 @@ def draw(hud, game):
             p2d.draw_rectangle(x-50, y-35, x-50+100*min(1, gear.hold_time/cfg.HOLD_SECONDS),
                                y-30, 240, 200, 100, filled=True)
     if not gear.open:
-        if gear.special_choices:
-            hud.text(640, 120, '첫 전투 보상: Tab에서 거대화 / 축지 중 1개 선택',
-                     'First battle reward: Tab to choose Enlarge / Blink', centered=True, font=hud.small)
         return
     p2d.draw_rectangle(160, 165, 1120, 650, 18, 22, 36, filled=True)
     p2d.draw_rectangle(160, 165, 1120, 650, 180, 150, 100)
@@ -101,5 +93,3 @@ def draw(hud, game):
         hud.text(710, 300, '교체 대기: '+ITEMS[gear.pending.item_id].name,
                  'Pending: '+gear.pending.item_id, font=hud.small)
         hud.text(710, 275, '취소: 닫기 (바닥 아이템 유지)', 'Cancel: close (item stays)', font=hud.small)
-    if gear.special_choices:
-        hud.text(710, 250, '특수 아이템 1개 선택 (이번 판)', 'Choose ONE ability for this run', font=hud.small)

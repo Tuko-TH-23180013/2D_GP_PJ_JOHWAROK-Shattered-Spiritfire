@@ -33,13 +33,14 @@ class FieldEquipment:
     def __init__(self):
         self.equipment = Equipment()
         self.unlocked_forms = ('basic', 'giant')  # 기존 두 폼, 영구 구매/저장은 후속.
-        self.special_choices = False
         self.special_claimed = False
         self.rng = random.Random()
         self.reset_room()
 
     def reset_room(self):
         self.drops = []
+        self.chests = []
+        self.chest_open = None
         self.rewarded = set()
         self.open = False
         self.pending = None
@@ -64,6 +65,12 @@ class FieldEquipment:
                      and abs(d.x - player.x) <= cfg.INTERACTION_DISTANCE
                      and abs(d.y - player.y) <= cfg.INTERACTION_DISTANCE]
         return min(available, key=lambda d: abs(d.x-player.x)+abs(d.y-player.y), default=None)
+
+    def nearest_chest(self, player):
+        nearby = [c for c in self.chests if not c.claimed
+                  and abs(c.x-player.x) <= cfg.INTERACTION_DISTANCE
+                  and abs(c.y-player.y) <= cfg.INTERACTION_DISTANCE]
+        return min(nearby, key=lambda c: abs(c.x-player.x)+abs(c.y-player.y), default=None)
 
     def take(self, drop, player):
         if drop.consumed or drop not in self.drops:
@@ -100,6 +107,12 @@ class FieldEquipment:
             if not drop.consumed:
                 drop.update(dt, game.world)
         target = self.nearest(player)
+        chest = self.nearest_chest(player)
+        if chest and (target is None or abs(chest.x-player.x) < abs(target.x-player.x)):
+            self.reset_hold()
+            if sdl2.SDLK_f in inputs.pressed:
+                self.chest_open = chest
+            return True
         if inputs.focus_lost or target is not self.hold_target:
             self.reset_hold()
         if sdl2.SDLK_f in inputs.pressed and target:
@@ -128,10 +141,11 @@ class FieldEquipment:
         for index in range(game.encounters.completed):
             if index not in self.rewarded:
                 self.rewarded.add(index)
-                drop = self.add_drop(self.rng.choice(tuple(ITEMS)), game.player, 'encounter')
-                drop.x, drop.y = game.encounters.zones[index].gate_x - 100, 100
+                from reward_chest import RewardChest
+                x = game.encounters.zones[index].gate_x
+                self.chests.append(RewardChest('item', (self.rng.choice(tuple(ITEMS)),), x-180))
                 if game.room_index == 0 and index == 0 and not self.special_claimed:
-                    self.special_choices = True
+                    self.chests.append(RewardChest('ability', ('enlarge', 'blink'), x-70))
 
     def can_change_form(self, game):
         return (game.player.hp > 0 and game.encounters.finished

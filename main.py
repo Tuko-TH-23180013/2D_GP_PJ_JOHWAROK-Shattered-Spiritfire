@@ -28,6 +28,7 @@ class InputState:
     quit_requested: bool = False
     clicks: list = field(default_factory=list)
     focus_lost: bool = False
+    mouse: tuple = (-1, -1)
 
     @property
     def ability_direction(self):
@@ -44,6 +45,9 @@ class InputState:
                 self.quit_requested = True
             elif event.type == sdl2.SDL_MOUSEBUTTONDOWN and event.button.button == sdl2.SDL_BUTTON_LEFT:
                 self.clicks.append((event.button.x, WINDOW_HEIGHT - 1 - event.button.y))
+                self.mouse = self.clicks[-1]
+            elif event.type == sdl2.SDL_MOUSEMOTION:
+                self.mouse = (event.motion.x, WINDOW_HEIGHT - 1 - event.motion.y)
             elif event.type == sdl2.SDL_KEYDOWN:
                 key = event.key.keysym.sym
                 if not event.key.repeat and key not in self.held:
@@ -407,6 +411,14 @@ class MapGame(Game):
         self.run_dead = True
 
     def update(self, dt):
+        if self.gear.chest_open is not None:
+            if sdl2.SDLK_TAB in self.inputs.pressed:
+                self.gear.chest_open = None
+                self.gear.reset_hold()
+            else:
+                from reward_chest_ui import handle_clicks
+                handle_clicks(self)
+            return
         if sdl2.SDLK_TAB in self.inputs.pressed and self.player.hp > 0:
             self.gear.toggle()
             return
@@ -424,7 +436,7 @@ class MapGame(Game):
         if self.player.hp <= 0 or self.victory:
             return
         item_interaction = self.gear.update_field(self, dt)
-        if self.gear.open:
+        if self.gear.open or self.gear.chest_open is not None:
             return
         self.elapsed += dt
         previous_x = self.player.x

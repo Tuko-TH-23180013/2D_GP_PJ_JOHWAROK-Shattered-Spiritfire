@@ -216,3 +216,5 @@ class HUD:
         if hasattr(game, 'gear'):
             from equipment_ui import draw
             draw(self, game)
+            from reward_chest_ui import draw as draw_chests
+            draw_chests(self, game)

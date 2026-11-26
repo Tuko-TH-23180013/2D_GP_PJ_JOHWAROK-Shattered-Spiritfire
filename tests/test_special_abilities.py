@@ -136,13 +136,15 @@ class AbilityTests(unittest.TestCase):
         self.assertAlmostEqual(game.abilities.giant_remaining, before[0]-.01)
 
     def test_first_reward_selects_only_one(self):
-        from equipment_ui import handle_clicks
+        from reward_chest_ui import handle_clicks
         game = MapGame()
         game.encounters.completed = 1
         game.gear.award(game)
-        game.gear.open = True
-        game.inputs.clicks = [(750, 200), (920, 200)]
+        chest = next(c for c in game.gear.chests if c.kind == 'ability')
+        game.gear.chest_open = chest
+        game.inputs.clicks = [(400, 460), (640, 200), (800, 460)]
         handle_clicks(game)
         self.assertEqual(game.abilities.owned, {'enlarge'})
         game.gear.award(game)
-        self.assertFalse(game.gear.special_choices)
+        self.assertTrue(chest.claimed)
+        self.assertEqual(len(game.gear.chests), 2)

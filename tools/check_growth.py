@@ -27,13 +27,19 @@ def main():
         for slot, item in enumerate(('fang', 'fang', 'mirror', 'guard_knot')):
             game.gear.equipment.equip(slot, item)
         game.player.refresh_stats()
-        game.gear.special_choices = True
+        from reward_chest import RewardChest
+        chest = RewardChest('ability', ('enlarge','blink'), game.player.x)
+        game.gear.chests.append(chest)
         game.gear.open = True
         game.draw()
         capture('johwarok-growth-equipment.png')
         present()
-        click(game, 750, 200)
+        game.gear.open = False
+        game.gear.chest_open = chest
+        click(game, 400, 460)
+        click(game, 640, 200)
         assert game.abilities.equipped == 'enlarge'
+        game.gear.open = True
         before = game.elapsed
         game.update(30)
         assert game.elapsed == before
