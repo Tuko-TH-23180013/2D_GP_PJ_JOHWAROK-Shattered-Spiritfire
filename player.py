@@ -48,17 +48,30 @@ class Player:
         self.switch_remaining = 0.0
         self.switch_invulnerability = 0.0
         from equipment import Equipment
+        from special_abilities import Abilities
         self.equipment = Equipment()
+        self.abilities = Abilities()
         self.refresh_stats()
 
     def refresh_stats(self):
-        from growth_settings import BASE_HP, DAMAGE_REDUCTION_CAP
+        import growth_settings as cfg
         stats = self.equipment.calculate()
-        self.max_hp = BASE_HP + stats.hp
+        giant = self.abilities.giant_remaining > 1e-9
+        self.max_hp = cfg.BASE_HP + stats.hp
         self.hp = min(self.hp, self.max_hp)  # 장착으로 무료 회복하지 않는다.
-        self.damage_multiplier = 1 + stats.attack
+        self.damage_multiplier = 1 + stats.attack + (cfg.GIANT_DAMAGE if giant else 0)
         self.stagger_multiplier = 1 + stats.stagger
-        self.damage_reduction = min(DAMAGE_REDUCTION_CAP, stats.reduction)
+        self.damage_reduction = min(cfg.DAMAGE_REDUCTION_CAP, stats.reduction +
+                                    (cfg.GIANT_REDUCTION if giant else 0))
+        self.body_scale = cfg.GIANT_SCALE if giant else 1
+        self.move_multiplier = cfg.GIANT_MOVE if giant else 1
+        self.dash_multiplier = cfg.GIANT_DASH if giant else 1
+
+    @property
+    def hurt_bounds(self):
+        half = self.width * self.body_scale / 2
+        center = self.x + self.width / 2
+        return Rect(center-half, self.y, center+half, self.y+self.height*self.body_scale)
 
     @property
     def bounds(self):
@@ -215,12 +228,12 @@ class Player:
             step = min(remaining, PHYSICS_STEP)
             # 구간 경계에서 나누어 FPS에 따른 이동 거리·무적 시간 차이를 막는다.
             for timer in (self.dash_remaining, self.dash_invulnerability,
-                          self.switch_invulnerability):
+                          self.switch_invulnerability, self.abilities.giant_remaining):
                 if timer > 1e-9:
                     step = min(step, timer)
             remaining -= step
-            speed = (self.dash_direction * DASH_SPEED if self.dash_remaining > 1e-9
-                     else direction * MOVE_SPEED)
+            speed = (self.dash_direction * DASH_SPEED * self.dash_multiplier if self.dash_remaining > 1e-9
+                     else direction * MOVE_SPEED * self.move_multiplier)
             world.move_x(self, speed * step)
             if self.dash_remaining > 1e-9:
                 # ?? ??? ??/?? ??? ??? ?? ?? ??? ????.
@@ -251,3 +264,5 @@ class Player:
             self.switch_remaining = max(0.0, self.switch_remaining - step)
             self.switch_invulnerability = max(0.0, self.switch_invulnerability - step)
             self.advance_attack(step)
+            self.abilities.update(step)
+            self.refresh_stats()

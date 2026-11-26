@@ -306,6 +306,8 @@ class Game:
         if self.show_hitboxes:
             draw_world(player.x, player.y, player.x + player.width,
                        player.y + player.height, 255, 215, 90)
+            hurt = player.hurt_bounds
+            draw_world(hurt.left, hurt.bottom, hurt.right, hurt.top, 255, 100, 170)
         if player.attack is not None:
             phase_color = {"STARTUP": (245, 220, 70), "ACTIVE": (255, 130, 50),
                            "RECOVERY": (140, 130, 180)}[player.attack.phase]
@@ -336,6 +338,8 @@ class MapGame(Game):
         self.rewards = RewardSystem()
         from field_equipment import FieldEquipment
         self.gear = FieldEquipment()
+        from special_abilities import Abilities
+        self.abilities = Abilities()
         self.run_dead = False
         self.enter_room(0)
 
@@ -352,13 +356,15 @@ class MapGame(Game):
         self.rewards.reset_room()
         self.stage = ROOMS[index]
         self.world = self.stage.create_world()
+        self.combat.world = self.world
         self.camera = Camera(self.stage.width, zoom=self.stage.camera_zoom,
                              ground_screen_y=140, vertical_follow=True)
         self.player = Player(100, 100, weapon=weapon)
         self.player.equipment = self.gear.equipment
+        self.player.abilities = self.abilities
         self.player.refresh_stats()
         if hp is not None:
-            self.player.hp = hp
+            self.player.hp = min(hp, self.player.max_hp)
         self.hero_animation = HeroAnimation()
         self.enemies = self.stage.create_enemies()
         self.encounters = EncounterFlow(self.stage.encounters, self.world)
@@ -381,12 +387,17 @@ class MapGame(Game):
 
     def clear_run(self):
         from field_equipment import FieldEquipment
+        from special_abilities import Abilities
+        unlocked_forms = self.gear.unlocked_forms
         self.gear = FieldEquipment()
+        self.gear.unlocked_forms = unlocked_forms
+        self.abilities = Abilities()
         self.rewards.balance = 0
         self.rewards.reset_room()
         self.saved_room = None
         self.cleared_rooms = set()
         self.player.equipment = self.gear.equipment
+        self.player.abilities = self.abilities
         self.player.refresh_stats()
         self.run_dead = True
 
@@ -419,6 +430,11 @@ class MapGame(Game):
             step = min(remaining, PHYSICS_STEP)
             remaining -= step
             self.combat.update_target(self.player, step)
+            if (first and self.inputs.pressed & {sdl2.SDLK_LSHIFT, sdl2.SDLK_RSHIFT}
+                    and not self.inputs.pressed & {sdl2.SDLK_x, sdl2.SDLK_z, sdl2.SDLK_SPACE}):
+                if direction:
+                    self.player.facing = 1 if direction > 0 else -1
+                self.abilities.use(self.player, self.world)
             self.player.update(step, direction, first and sdl2.SDLK_c in self.inputs.pressed,
                                self.world, down_held=sdl2.SDLK_DOWN in self.inputs.held,
                                dash_pressed=first and sdl2.SDLK_z in self.inputs.pressed,

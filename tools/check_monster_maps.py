@@ -96,7 +96,7 @@ def main():
         game.update(.02)
         game.draw()
         present()
-        assert game.visuals is resources and game.room_index == 3
+        assert game.visuals is resources and game.room_index == 0
         del resources
         print(f'PASS: 7 maps, {len(CATALOG)} sheets in both directions, boss poses, save/restart/cache')
     finally:

@@ -47,10 +47,14 @@ class Attack:
 
     @property
     def bounds(self):
-        edge = self.owner.x + self.owner.width if self.facing > 0 else self.owner.x
-        left = edge if self.facing > 0 else edge - self.data.reach
-        bottom = self.owner.y + (self.owner.height - self.data.height) / 2
-        return Rect(left, bottom, left + self.data.reach, bottom + self.data.height)
+        scale = getattr(self.owner, 'body_scale', 1)
+        half = self.owner.width * scale / 2
+        center = self.owner.x + self.owner.width / 2
+        edge = center + self.facing * half
+        reach, height = self.data.reach * scale, self.data.height * scale
+        left = edge if self.facing > 0 else edge - reach
+        bottom = self.owner.y + (self.owner.height * scale - height) / 2
+        return Rect(left, bottom, left + reach, bottom + height)
 
     def advance(self, dt):
         self.elapsed += dt

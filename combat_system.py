@@ -7,8 +7,22 @@ def overlaps(a, b):
 
 
 class CombatSystem:
-    def __init__(self):
+    def __init__(self, world=None):
+        self.world = world
         self.damaged_this_frame = set()
+
+    def blocked(self, attack, target):
+        if self.world is None:
+            return False
+        # 확대된 판정이 벽/결계 반대편의 상대에게 닿아도 관통 피해는 금지.
+        owner = attack.owner
+        ax = getattr(attack, 'x', owner.x) + getattr(attack, 'width', owner.width) / 2
+        bx = target.x + target.width / 2
+        low, high = sorted((ax, bx))
+        bounds = attack.bounds
+        return any(not s.one_way and low <= s.left and s.right <= high
+                   and bounds.bottom < s.top and bounds.top > s.bottom
+                   for s in self.world.solids)
 
     def begin_frame(self):
         self.damaged_this_frame.clear()
@@ -25,7 +39,8 @@ class CombatSystem:
                         or target in attack.hit_targets
                         or target in self.damaged_this_frame):
                     continue
-                if not overlaps(attack.bounds, target.bounds):
+                if (not overlaps(attack.bounds, getattr(target, 'hurt_bounds', target.bounds))
+                        or self.blocked(attack, target)):
                     continue
                 attack.hit_targets.add(target)
                 self.damaged_this_frame.add(target)

@@ -74,8 +74,28 @@ class HUD:
         self.text(191, 16, f'대시 {player.dash_charges}/2', f'Dash {player.dash_charges}/2',
                   color=CYAN, font=self.small)
 
-    def draw_abilities(self):
+    def draw_abilities(self, game=None):
         self.asset('ability_panel', 624, 50, 150, 90)
+        if game is not None and hasattr(game, 'abilities'):
+            from special_abilities import NAMES
+            abilities = game.abilities
+            for name, x, icon in (('enlarge', 595, 'skill_slash'), ('blink', 653, 'skill_spirit')):
+                selected = name == abilities.equipped
+                self.asset('slot_active' if selected else 'slot_inactive', x, 49, 44, 44)
+                self.asset(icon if name in abilities.owned else 'skill_locked', x, 49, 38, 38)
+                self.text(x, 82, NAMES[name], name, centered=True, font=self.small)
+                remaining = abilities.cooldowns[name]
+                if remaining > 1e-9:
+                    self.text(x, 49, f'{remaining:.1f}', centered=True, font=self.small)
+            if abilities.giant_remaining > 1e-9:
+                ko, en = f'거대화 {abilities.giant_remaining:.1f}s', f'Buff {abilities.giant_remaining:.1f}s'
+            elif abilities.equipped:
+                ready = abilities.available(game.player, game.world)
+                ko, en = ('Shift 사용 가능', 'Shift ready') if ready else ('Shift 대기', 'Shift waiting')
+            else:
+                ko, en = 'Tab 보상 확인', 'Tab rewards'
+            self.text(624, 16, ko, en, centered=True, font=self.small, color=GOLD)
+            return
         for key, x in (('A', 595), ('S', 653)):
             self.asset('slot_inactive', x, 49, 44, 44)
             self.asset('skill_locked', x, 49, 38, 38)
@@ -180,7 +200,7 @@ class HUD:
         p2d.draw_rectangle(0, 0, 1279, 99, 13, 15, 26, filled=True)
         p2d.draw_rectangle(0, 98, 1279, 99, 87, 73, 66, filled=True)
         self.draw_player(game.player)
-        self.draw_abilities()
+        self.draw_abilities(game)
         self.draw_boss(game)
         self.draw_location(game)
         self.draw_notifications(game)

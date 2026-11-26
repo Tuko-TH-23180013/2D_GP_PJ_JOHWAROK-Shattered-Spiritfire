@@ -138,7 +138,8 @@ class DemoSprites:
             self.hero.clip_composite_draw(*source_rect(animation.frame), 0,
                                           'h' if facing < 0 else '',
                                           *camera.screen_point(*draw_center(player, 0)),
-                                          CELL * HERO_SCALE * camera.zoom, CELL * HERO_SCALE * camera.zoom)
+                                          CELL * HERO_SCALE * camera.zoom * player.body_scale,
+                                          CELL * HERO_SCALE * camera.zoom * player.body_scale)
         finally:
             self.hero.opacify(1.0)
             sdl2.SDL_SetTextureColorMod(self.hero.texture, 255, 255, 255)

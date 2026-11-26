@@ -19,7 +19,7 @@ def source_rect(frame):
 
 def draw_center(player, camera_x=0):
     return (player.x + player.width / 2 - camera_x,
-            player.y + (FOOT_PIVOT[1] - CELL / 2) * HERO_SCALE)
+            player.y + (FOOT_PIVOT[1] - CELL / 2) * HERO_SCALE * getattr(player, 'body_scale', 1))
 
 
 class HeroAnimation:
