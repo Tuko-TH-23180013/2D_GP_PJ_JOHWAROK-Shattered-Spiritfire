@@ -1,4 +1,4 @@
-"""처치 보상. 강화용 혼불은 현재 실행 세션 동안 유지한다."""
+"""처치 보상. 골드는 맵 간 유지하고 사망/새 판에서 초기화한다."""
 
 from dataclasses import dataclass
 import random

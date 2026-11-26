@@ -1,4 +1,4 @@
-"""2차기획 v0.11 시험값. 최종 밸런스가 아니며 효과는 기본값에서 재계산한다."""
+"""2차기획 v0.13 시험값. 최종 밸런스가 아니며 효과는 기본값에서 재계산한다."""
 EQUIPMENT_SLOTS = 4
 INSCRIPTION_THRESHOLD = 2
 COUNT_DUPLICATES = True

@@ -3,7 +3,7 @@ import sdl2
 from player import Player
 from world import World, Rect
 from main import MapGame
-from attack import Attack, BASIC_COMBO
+from attack import Attack, AttackData, BASIC_COMBO
 from combat_system import CombatSystem
 from training_dummy import TrainingDummy
 import growth_settings as cfg
@@ -15,6 +15,28 @@ def grant(player, name='enlarge'):
 
 
 class AbilityTests(unittest.TestCase):
+    def test_enlarged_hurt_area_receives_hits_outside_terrain_body(self):
+        p, enemy, world = Player(), TrainingDummy(), World()
+        enemy.x, enemy.y, enemy.facing = 200, 100, -1
+        data = AttackData('edge', .1, .1, .1, 10, 0, 35, 50)
+        attack = Attack(enemy, data)
+        attack.advance(.1)
+        combat = CombatSystem()
+        combat.resolve([attack], [p])
+        self.assertEqual(p.hp, 100)
+        grant(p)
+        p.abilities.use(p, world)
+        combat.resolve([attack], [p])
+        self.assertEqual(p.hp, 92)
+
+    def test_blink_rejects_platform_interior_without_cooldown(self):
+        p = Player(100, 200)
+        world = World([Rect(300, 210, 400, 230, True)])
+        grant(p, 'blink')
+        self.assertFalse(p.abilities.available(p, world))
+        self.assertFalse(p.abilities.use(p, world))
+        self.assertEqual((p.x, p.abilities.cooldowns['blink']), (100, 0))
+
     def test_giant_effects_and_expiry_restore_base(self):
         p, world = Player(), World()
         p.equipment.equip(0, 'fang')
