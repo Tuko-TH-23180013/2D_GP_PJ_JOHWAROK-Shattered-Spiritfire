@@ -51,25 +51,21 @@ def main():
             defeat(game)
             assert game.room_clear and game.encounters.gate is None
             game.player.x = game.stage.width - 115
-            game.inputs.pressed = {sdl2.SDLK_UP}
+            game.inputs.pressed = {sdl2.SDLK_f}
             game.update(.02)
             assert game.room_index == index + 1
         game.enter_room(3)
         game.player.x = 640
-        game.inputs.pressed = {sdl2.SDLK_UP}
+        game.inputs.pressed = {sdl2.SDLK_f}
         game.update(.02)
         game.enter_room(4)
         defeat(game)
         game.inputs.pressed = {sdl2.SDLK_r}
         game.update(.02)
-        assert game.room_index == 3
-        game.player.x = game.stage.width - 115
-        game.inputs.pressed = {sdl2.SDLK_UP}
-        game.update(.02)
-        assert game.room_index == 4 and game.encounters.completed == 0
+        assert game.room_index == 0 and game.encounters.completed == 0
         game.draw()
         present()
-        print('PASS: four normal maps, barriers, traversal, second groups, exits, checkpoint restart')
+        print('PASS: four normal maps, barriers, traversal, second groups, exits, new run reset')
     finally:
         p2d.update_canvas = present
         game.release_assets()

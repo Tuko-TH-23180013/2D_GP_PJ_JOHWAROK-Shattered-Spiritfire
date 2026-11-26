@@ -28,9 +28,10 @@ class CurrencyTests(unittest.TestCase):
         game.enemies[0].hp = 0
         game.update(.01)
         game.enter_room(3)
+        self.assertEqual(game.rewards.balance, 5)
         game.saved_room = 3
         game.restart()
-        self.assertEqual(game.rewards.balance, 5)
+        self.assertEqual(game.rewards.balance, 0)
         self.assertEqual(MapGame().rewards.balance, 0)
 
 

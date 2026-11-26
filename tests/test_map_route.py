@@ -29,7 +29,7 @@ class MapRouteTests(unittest.TestCase):
     def exit_room(self, game):
         game.player.x = game.stage.width - 115
         game.player.y = 100
-        game.inputs.pressed = {sdl2.SDLK_UP}
+        game.inputs.pressed = {sdl2.SDLK_f}
         game.update(.02)
 
     def test_route_contains_all_monsters_and_requested_order(self):
@@ -75,11 +75,11 @@ class MapRouteTests(unittest.TestCase):
         self.exit_room(game)
         self.assertEqual(game.room_index, 1)
 
-    def test_save_restart_cleans_room_attacks_and_keeps_prior_progress(self):
+    def test_restart_cleans_run_even_after_old_checkpoint(self):
         game = MapGame()
         game.enter_room(3)
         game.player.x = 640
-        game.inputs.pressed = {sdl2.SDLK_UP}
+        game.inputs.pressed = {sdl2.SDLK_f}
         game.update(.02)
         self.assertEqual(game.saved_room, 3)
         self.exit_room(game)
@@ -87,12 +87,12 @@ class MapRouteTests(unittest.TestCase):
         game.player.hp = 0
         game.inputs.pressed = {sdl2.SDLK_r}
         game.update(.02)
-        self.assertEqual(game.room_index, 3)
-        self.assertEqual(game.player.x, 640)
+        self.assertEqual(game.room_index, 0)
+        self.assertEqual(game.player.x, 100)
         self.assertEqual(game.player.hp, 100)
         self.assertEqual(game.player.dash_charges, 2)
-        self.assertEqual(game.cleared_rooms, {0, 1, 2})
-        self.assertTrue(game.checkpoint.active)
+        self.assertEqual(game.cleared_rooms, set())
+        self.assertFalse(game.checkpoint.active)
         self.assertEqual(game.projectiles, [])
         self.exit_room(game)
         self.assertEqual(len(game.enemies), 2)

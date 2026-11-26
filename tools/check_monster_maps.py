@@ -86,7 +86,7 @@ def main():
         present()
         game.enter_room(3)
         game.player.x = 640
-        game.inputs.pressed = {sdl2.SDLK_UP}
+        game.inputs.pressed = {sdl2.SDLK_f}
         game.update(.02)
         assert game.saved_room == 3
         resources = game.visuals

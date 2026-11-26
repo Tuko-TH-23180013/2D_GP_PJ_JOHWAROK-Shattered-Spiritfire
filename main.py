@@ -26,13 +26,19 @@ class InputState:
     pressed: set[int] = field(default_factory=set)
     released: set[int] = field(default_factory=set)
     quit_requested: bool = False
+    clicks: list = field(default_factory=list)
+    focus_lost: bool = False
 
     def collect(self, events):
         self.pressed.clear()
         self.released.clear()
+        self.clicks.clear()
+        self.focus_lost = False
         for event in events:
             if event.type == sdl2.SDL_QUIT:
                 self.quit_requested = True
+            elif event.type == sdl2.SDL_MOUSEBUTTONDOWN and event.button.button == sdl2.SDL_BUTTON_LEFT:
+                self.clicks.append((event.button.x, WINDOW_HEIGHT - 1 - event.button.y))
             elif event.type == sdl2.SDL_KEYDOWN:
                 key = event.key.keysym.sym
                 if not event.key.repeat and key not in self.held:
@@ -48,6 +54,8 @@ class InputState:
                   and event.window.event == sdl2.SDL_WINDOWEVENT_FOCUS_LOST):
                 self.released.update(self.held)
                 self.held.clear()
+                self.pressed.clear()
+                self.focus_lost = True
 
 
 def poll_events():
@@ -326,6 +334,9 @@ class MapGame(Game):
         self.projectiles = []
         from reward_system import RewardSystem
         self.rewards = RewardSystem()
+        from field_equipment import FieldEquipment
+        self.gear = FieldEquipment()
+        self.run_dead = False
         self.enter_room(0)
 
     @property
@@ -337,12 +348,15 @@ class MapGame(Game):
         from map_route import ROOMS
         from encounter_flow import EncounterFlow
         self.room_index = index
+        self.gear.reset_room()
         self.rewards.reset_room()
         self.stage = ROOMS[index]
         self.world = self.stage.create_world()
         self.camera = Camera(self.stage.width, zoom=self.stage.camera_zoom,
                              ground_screen_y=140, vertical_follow=True)
         self.player = Player(100, 100, weapon=weapon)
+        self.player.equipment = self.gear.equipment
+        self.player.refresh_stats()
         if hp is not None:
             self.player.hp = hp
         self.hero_animation = HeroAnimation()
@@ -361,19 +375,40 @@ class MapGame(Game):
         self.camera.follow(self.player)
 
     def restart(self):
-        self.cleared_rooms = set(range(self.saved_room)) if self.saved_room is not None else set()
-        self.enter_room(self.saved_room if self.saved_room is not None else 0)
-        if self.saved_room is not None:
-            self.player.x, self.player.y = self.checkpoint.spawn
-            self.camera.follow(self.player)
+        self.clear_run()
+        self.run_dead = False
+        self.enter_room(0)
+
+    def clear_run(self):
+        from field_equipment import FieldEquipment
+        self.gear = FieldEquipment()
+        self.rewards.balance = 0
+        self.rewards.reset_room()
+        self.saved_room = None
+        self.cleared_rooms = set()
+        self.player.equipment = self.gear.equipment
+        self.player.refresh_stats()
+        self.run_dead = True
 
     def update(self, dt):
+        if sdl2.SDLK_TAB in self.inputs.pressed and self.player.hp > 0:
+            self.gear.toggle()
+            return
+        if self.gear.open:
+            from equipment_ui import handle_clicks
+            handle_clicks(self)
+            return
+        if self.player.hp <= 0 and not self.run_dead:
+            self.clear_run()
         if sdl2.SDLK_F2 in self.inputs.pressed:
             self.show_hitboxes = not self.show_hitboxes
         if sdl2.SDLK_r in self.inputs.pressed:
             self.restart()
             return
         if self.player.hp <= 0 or self.victory:
+            return
+        item_interaction = self.gear.update_field(self, dt)
+        if self.gear.open:
             return
         self.elapsed += dt
         previous_x = self.player.x
@@ -408,10 +443,12 @@ class MapGame(Game):
             self.rewards.update(step, self.world, self.player)
             self.enemies = [e for e in self.enemies if not e.death_done]
             self.enemies.extend(self.encounters.update(self.player, self.enemies, self.world))
+            self.gear.award(self)
             if self.player.hp <= 0:
                 for actor in actors:
                     actor.attack = None
                 self.projectiles.clear()
+                self.clear_run()
                 break
             first = False
         self.camera.follow(self.player)
@@ -426,7 +463,7 @@ class MapGame(Game):
         gate = self.stage.boss_entrance
         self.at_boss_gate = (self.player.x + self.player.width >= gate.left
                             and self.player.y < gate.top and self.player.grounded)
-        if sdl2.SDLK_UP in self.inputs.pressed and self.player.hp > 0 and not self.victory:
+        if sdl2.SDLK_f in self.inputs.pressed and not item_interaction and self.player.hp > 0 and not self.victory:
             if self.stage.category == 'save' and self.checkpoint.activate(self.player):
                 self.saved_room = self.room_index
             if self.at_boss_gate and self.room_clear:

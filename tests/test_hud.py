@@ -95,7 +95,7 @@ class HUDTests(unittest.TestCase):
             before = vars(game).copy()
             hud.text.reset_mock()
             hud.draw_location(game)
-            self.assertTrue(any('세이브 활성 · R 복귀' in call.args for call in hud.text.call_args_list))
+            self.assertTrue(any('쉼터 활성 · R 새 판' in call.args for call in hud.text.call_args_list))
             self.assertEqual(vars(game), before)
 
     def test_text_uses_english_when_korean_font_unavailable(self):

@@ -118,10 +118,10 @@ class HUD:
             p2d.draw_rectangle(x - 12, 602, x + 12, 626, *color)
             self.text(x, 614, labels[i], english[i], centered=True, font=self.small, color=color)
         if game.stage.category == 'save':
-            ko, en = (('세이브 활성 · R 복귀', 'Save active / R respawn') if game.checkpoint.active
-                      else ('장승 앞에서 ↑ 저장', 'UP at shrine to save'))
+            ko, en = (('쉼터 활성 · R 새 판', 'Shrine active / R new run') if game.checkpoint.active
+                      else ('장승 앞에서 F 상호작용', 'F at shrine'))
         elif game.room_clear:
-            ko, en = ('전투 완료', 'Battle complete') if game.victory else ('출구 열림 · ↑ 이동', 'Exit open / UP to enter')
+            ko, en = ('전투 완료', 'Battle complete') if game.victory else ('출구 열림 · F 이동', 'Exit open / F to enter')
         else:
             alive = sum(e.hp > 0 for e in game.enemies) + int(game.boss is not None and game.boss.hp > 0)
             flow = getattr(game, 'encounters', None)
@@ -157,7 +157,7 @@ class HUD:
             self.text(640, 335, 'R 다시 도전 · Esc 종료', 'R retry / Esc quit', centered=True)
         elif game.player.hp <= 0:
             self.text(640, 405, '혼불이 꺼졌습니다', 'YOU DIED', centered=True, color=(255, 170, 180))
-            self.text(640, 316, 'R 체크포인트에서 재시작', 'R restart from checkpoint', centered=True, font=self.small)
+            self.text(640, 316, 'R 새 판 시작', 'R new run', centered=True, font=self.small)
         elif hasattr(game, 'room_index'):
             flow = getattr(game, 'encounters', None)
             if flow is not None and flow.gate is not None:
@@ -168,8 +168,8 @@ class HUD:
             x, y = game.camera.screen_point((gate.left + gate.right) / 2, gate.top + 24)
             x = max(70, min(1210, x))
             if gate.right >= game.camera.x and gate.left <= game.camera.x + game.camera.visible_width:
-                self.text(x, y, '↑ 다음 맵' if game.room_clear else '잠김',
-                          'UP: next map' if game.room_clear else 'Locked', centered=True, color=GOLD)
+                self.text(x, y, 'F 다음 맵' if game.room_clear else '잠김',
+                          'F: next map' if game.room_clear else 'Locked', centered=True, color=GOLD)
         elif game.checkpoint.can_activate(game.player):
             self.text(640, 565, '체크포인트 활성' if game.checkpoint.active else '↑ 체크포인트 활성화',
                       'Checkpoint active' if game.checkpoint.active else 'UP: activate checkpoint', centered=True)
@@ -187,9 +187,12 @@ class HUD:
         if hasattr(game, 'rewards'):
             self.asset('currency_panel', 1190, 52, 160, 76)
             self.asset('currency_spirit', 1135, 48, 28, 32)
-            self.text(1160, 72, '혼불', 'Spirit', font=self.small, color=CYAN)
+            self.text(1160, 72, '골드', 'Gold', font=self.small, color=CYAN)
             self.text(1160, 43, str(game.rewards.balance))
         self.text(775, 71, '방향키 이동  C 점프  ↓+C 하강', 'Arrows move / C jump / Down+C drop', font=self.small)
         self.text(775, 50, 'X 공격  Z 대시  Space 무기 전환', 'X attack / Z dash / Space switch', font=self.small)
-        self.text(775, 29, '↑ 상호작용  R 재시작  F2 판정  Esc 종료',
-                  'Up interact / R retry / F2 boxes / Esc quit', color=GOLD, font=self.small)
+        self.text(775, 29, 'F 상호작용  Tab 장비  R 새 판  Esc 종료',
+                  'F interact / Tab gear / R new run / Esc quit', color=GOLD, font=self.small)
+        if hasattr(game, 'gear'):
+            from equipment_ui import draw
+            draw(self, game)
