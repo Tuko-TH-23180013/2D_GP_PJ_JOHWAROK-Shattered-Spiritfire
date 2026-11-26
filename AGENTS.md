@@ -6,6 +6,7 @@
 2. docs/JOHWAROK_CODEX_HANDOFF.md — 제공된 인계 원본. 기획과 제안의 구분은 본문을 우선한다.
 3. docs/STATUS.md — 실제 확인한 구현·환경·다음 작업.
 4. docs/JOHWAROK_Incremental_Development.md — 원본 부록에서 분리한 개발 계획.
+5. docs/JOHWAROK_2차기획.md — 최신 성장·장비·능력 기획. 합의/시험/미정을 구분하며 추가 변경 시 버전과 이력을 갱신한다.
 
 ## 현재 출발점
 

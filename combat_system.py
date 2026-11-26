@@ -29,14 +29,18 @@ class CombatSystem:
                     continue
                 attack.hit_targets.add(target)
                 self.damaged_this_frame.add(target)
-                target.hp = max(0, target.hp - attack.data.damage)
+                damage = (attack.data.damage * getattr(attack.owner, 'damage_multiplier', 1)
+                          * (1 - getattr(target, 'damage_reduction', 0)))
+                # 시험 정책: 최종 피해만 사사오입, 내부 HP는 정수로 유지.
+                target.hp = max(0, target.hp - max(0, int(damage + .5)))
                 target.hit_flash = 0.12
                 if hasattr(target, "hurt_invulnerability"):
                     target.hurt_invulnerability = target.hurt_invulnerability_duration
                 if (target.stagger_limit is not None and target.stagger_remaining <= 0
                         and getattr(target, "can_accumulate_stagger", True)):
                     target.stagger = min(target.stagger_limit,
-                                         target.stagger + attack.data.stagger)
+                                         target.stagger + attack.data.stagger *
+                                         getattr(attack.owner, 'stagger_multiplier', 1))
                     if target.stagger >= target.stagger_limit:
                         target.stagger_remaining = getattr(target, "stagger_duration", 0.6)
                 if hasattr(target, "on_combat_hit"):

@@ -47,6 +47,18 @@ class Player:
         self.switch_queued = False
         self.switch_remaining = 0.0
         self.switch_invulnerability = 0.0
+        from equipment import Equipment
+        self.equipment = Equipment()
+        self.refresh_stats()
+
+    def refresh_stats(self):
+        from growth_settings import BASE_HP, DAMAGE_REDUCTION_CAP
+        stats = self.equipment.calculate()
+        self.max_hp = BASE_HP + stats.hp
+        self.hp = min(self.hp, self.max_hp)  # 장착으로 무료 회복하지 않는다.
+        self.damage_multiplier = 1 + stats.attack
+        self.stagger_multiplier = 1 + stats.stagger
+        self.damage_reduction = min(DAMAGE_REDUCTION_CAP, stats.reduction)
 
     @property
     def bounds(self):
