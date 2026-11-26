@@ -127,7 +127,7 @@ class FieldEquipment:
                 if self.hold_time + 1e-9 >= cfg.HOLD_SECONDS:
                     if not target.consumed:
                         target.consumed = True
-                        game.rewards.balance += cfg.CONVERT_GOLD
+                        game.rewards.gold += cfg.CONVERT_GOLD
                     self.reset_hold()
             elif sdl2.SDLK_f in inputs.released:
                 self.take(target, player)

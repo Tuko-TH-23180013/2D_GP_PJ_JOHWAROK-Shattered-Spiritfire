@@ -206,9 +206,12 @@ class HUD:
         self.draw_notifications(game)
         if hasattr(game, 'rewards'):
             self.asset('currency_panel', 1190, 52, 160, 76)
-            self.asset('currency_spirit', 1135, 48, 28, 32)
-            self.text(1160, 72, '골드', 'Gold', font=self.small, color=CYAN)
-            self.text(1160, 43, str(game.rewards.balance))
+            from currency_visuals import draw_icon
+            for kind, y, ko, en, value in (('gold', 69, '골드', 'Gold', game.rewards.gold),
+                                         ('jade', 36, '옥석', 'Jade', game.rewards.jade)):
+                draw_icon(kind, 1129, y, 18)
+                self.text(1145, y, ko, en, font=self.small, color=GOLD if kind == 'gold' else CYAN)
+                self.text(1190, y, str(value), font=self.small)
         self.text(775, 71, '방향키 이동  C 점프  ↓+C 하강', 'Arrows move / C jump / Down+C drop', font=self.small)
         self.text(775, 50, 'X 공격  Z 대시  Space 무기 전환', 'X attack / Z dash / Space switch', font=self.small)
         self.text(775, 29, 'F 상호작용  Tab 장비  R 새 판  Esc 종료',

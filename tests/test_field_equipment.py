@@ -32,14 +32,14 @@ class FieldTests(unittest.TestCase):
         game.inputs.pressed.clear()
         game.inputs.focus_lost = True
         gear.update_field(game, .5)
-        self.assertEqual(game.rewards.balance, 0)
+        self.assertEqual(game.rewards.gold, 0)
         game.inputs.focus_lost = False
         game.inputs.pressed = {sdl2.SDLK_f}
         gear.update_field(game, .5)
         game.inputs.pressed.clear()
         gear.update_field(game, .5)
         gear.update_field(game, 2)
-        self.assertEqual(game.rewards.balance, 10)
+        self.assertEqual(game.rewards.gold, 10)
         self.assertTrue(drop.consumed)
         self.assertEqual(gear.equipment.slots.count('fang'), 1)
         second = gear.add_drop('fang', game.player)
@@ -75,10 +75,10 @@ class FieldTests(unittest.TestCase):
         game.player.refresh_stats()
         game.enter_room(1, hp=80)
         self.assertEqual((game.player.hp, game.player.max_hp), (80, 110))
-        game.rewards.balance = 20
+        game.rewards.gold = 20
         game.player.hp = 0
         game.update(.01)
-        self.assertEqual(game.rewards.balance, 0)
+        self.assertEqual(game.rewards.gold, 0)
         self.assertEqual(game.player.max_hp, 100)
         self.assertFalse(any(game.gear.equipment.slots))
         game.restart()

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import random
 
 REWARD_CURRENCY = {'normal': 5, 'mid': 50, 'main': 150}  # 임시 밸런스
+REWARD_JADE = {'normal': 1, 'mid': 10, 'main': 30}  # 폼 성장용 옥석 시험값
 ORB_DROP_CHANCE = .25
 ORB_HEAL = 20
 MID_BOSS_HEAL = 40
@@ -39,8 +40,13 @@ class VitalityOrb:
 class RewardSystem:
     def __init__(self, rng=None):
         self.rng = rng if rng is not None else random.Random()
-        self.balance = 0
+        self.gold = 0
+        self.jade = 0
         self.reset_room()
+
+    def reset_run(self):
+        self.gold = 0
+        self.reset_room()  # 획득한 옥석은 사망·새 판에도 유지한다.
 
     def reset_room(self):
         # 객체 자체를 보관하여 제거된 적의 id 재사용도 방지한다.
@@ -53,7 +59,8 @@ class RewardSystem:
                 continue
             self.credited.add(actor)
             tier = category if actor is boss else 'normal'
-            self.balance += REWARD_CURRENCY[tier]
+            self.gold += REWARD_CURRENCY[tier]
+            self.jade += REWARD_JADE[tier]
             if tier == 'normal':
                 if self.rng.random() < ORB_DROP_CHANCE:
                     self.orbs.append(VitalityOrb(actor.x + actor.width / 2 - 10,

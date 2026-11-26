@@ -8,6 +8,29 @@ from world import World
 
 
 class CurrencyTests(unittest.TestCase):
+    def test_jade_survives_death_restart_and_gold_does_not(self):
+        game = MapGame()
+        game.rewards.gold, game.rewards.jade = 50, 10
+        game.player.hp = 0
+        game.update(.01)
+        self.assertEqual((game.rewards.gold,game.rewards.jade),(0,10))
+        game.restart()
+        self.assertEqual((game.rewards.gold,game.rewards.jade),(0,10))
+        game.enter_room(2)
+        self.assertEqual(game.rewards.jade,10)
+        self.assertEqual(MapGame().rewards.jade,0)  # 파일 저장은 후속 범위.
+
+    def test_boss_and_normal_jade_rewards_are_independent(self):
+        game = MapGame()
+        expected = 0
+        for room, amount in ((0,1),(2,10),(6,30)):
+            game.enter_room(room)
+            actor = game.boss or game.enemies[0]
+            actor.hp = 0
+            game.update(.01)
+            expected += amount
+            self.assertEqual(game.rewards.jade,expected)
+
     def test_defeat_once_and_tiers(self):
         game = MapGame()
         expected = 0
@@ -15,24 +38,24 @@ class CurrencyTests(unittest.TestCase):
             game.enter_room(room)
             actor = game.boss or game.enemies[0]
             game.update(.01)
-            self.assertEqual(game.rewards.balance, expected)
+            self.assertEqual(game.rewards.gold, expected)
             actor.hp = 0
             actor.on_combat_hit()
             for _ in range(120):
                 game.update(1 / 60)
             expected += amount
-            self.assertEqual(game.rewards.balance, expected)
+            self.assertEqual(game.rewards.gold, expected)
 
     def test_session_wallet_survives_player_replacement(self):
         game = MapGame()
         game.enemies[0].hp = 0
         game.update(.01)
         game.enter_room(3)
-        self.assertEqual(game.rewards.balance, 5)
+        self.assertEqual(game.rewards.gold, 5)
         game.saved_room = 3
         game.restart()
-        self.assertEqual(game.rewards.balance, 0)
-        self.assertEqual(MapGame().rewards.balance, 0)
+        self.assertEqual(game.rewards.gold, 0)
+        self.assertEqual(MapGame().rewards.gold, 0)
 
 
 class HealingTests(unittest.TestCase):

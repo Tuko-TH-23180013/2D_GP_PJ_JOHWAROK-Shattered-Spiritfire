@@ -21,7 +21,7 @@ def main():
             enemy.on_combat_hit()
         for _ in range(120):
             game.update(1 / 60)
-        assert game.rewards.balance == 10 and len(game.rewards.orbs) == 2
+        assert game.rewards.gold == 10 and len(game.rewards.orbs) == 2
         game.draw()
         capture('johwarok-rewards-orbs.png')
         present()
@@ -35,7 +35,7 @@ def main():
             game.boss.on_combat_hit()
             for _ in range(120):
                 game.update(1 / 60)
-            assert game.player.hp == hp and game.rewards.balance == money
+            assert game.player.hp == hp and game.rewards.gold == money
             game.draw()
             capture(f'johwarok-rewards-boss-{room}.png')
             present()

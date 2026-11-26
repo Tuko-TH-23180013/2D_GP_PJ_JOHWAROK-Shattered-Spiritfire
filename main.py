@@ -401,8 +401,7 @@ class MapGame(Game):
         self.gear = FieldEquipment()
         self.gear.unlocked_forms = unlocked_forms
         self.abilities = Abilities()
-        self.rewards.balance = 0
-        self.rewards.reset_room()
+        self.rewards.reset_run()
         self.saved_room = None
         self.cleared_rooms = set()
         self.player.equipment = self.gear.equipment
